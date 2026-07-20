@@ -112,8 +112,6 @@ def projectPolarizability(polarizability, polarization, single_mode_approx):
 def lorentzian(delta, omega, omega0):
     return (1/(2*np.pi))*delta/((0.5*delta)**2+(omega-omega0)**2)
 
-
-
 class CBOPTHessian:
     def __init__(self,
                  vib_modes,
@@ -183,21 +181,6 @@ class CBOPTHessian:
         cav_modes = np.asarray(cav_modes, dtype=float)
         return len(cav_modes) if single_mode_approx == True else 2*len(cav_modes)
 
-    @staticmethod
-    def screen_cavfreq(cav_modes, coupling, polarization, dip_deriv, polarizability, single_mode_approx):
-        cav_modes   = np.asarray(cav_modes, dtype=float)
-        coupling            = float(coupling)
-        polarization        = np.asarray(polarization, dtype=float)
-        dip_deriv           = np.asarray(dip_deriv, dtype=float)
-        polarizability      = np.asarray(polarizability, dtype=float)
-        single_mode_approx  = bool(single_mode_approx)
-
-        screened_cav_freqs = cav_modes.copy()
-        if single_mode_approx == True and coupling != 0.0:
-            projected_stat_polarizability, _ = projectPolarizability(polarizability, polarization, single_mode_approx)
-            screened_cav_freqs += 0.5 * coupling**2 * cav_modes * projected_stat_polarizability
-
-        return screened_cav_freqs
 
     @property
     def hessian(self):
@@ -354,7 +337,7 @@ class CBOPTHessian:
                     self.cbopt2_corr[n_vib + n_cav + i_cav, i_vib] = 0.5*coup**3*n_cav*cav_modes[i_cav]*np.einsum('i,i', proj_stat_polarize[1, :], proj_dip_deriv[i_vib, :])
                     self.cbopt2_corr[i_vib, n_vib + n_cav + i_cav] = self.cbopt2_corr[n_vib + n_cav + i_cav, i_vib]
 
-        self.hessian = self.cbopt1_hessian + self.cbopt2_corr
+        self.hessian = self.build_cbopt1_hessian().hessian + self.cbopt2_corr
         
         return self
     

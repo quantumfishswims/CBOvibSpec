@@ -27,7 +27,7 @@ stat_polar      = np.loadtxt('model_data/stat_polar_pta.dat', dtype=float)
 
 nmol         = 1
 cav_freqs    = np.array([861.6])  # in cm-1
-coupling     = 0.02*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
+coupling     = 0.0*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
 polarization = np.array([[0, 0, 1], [0, 1, 0]])
 single_mode_approximation = True
 
@@ -38,47 +38,59 @@ nfreq               = 5000
 spec_grid           = np.linspace(freq_min, freq_max, nfreq)
 broadening          = 10 # cm-1
 
-# --- CBO-PT(n) Hessians & IR Spectra---
+# --- CBO-PT(0) IR Spectrum ---
 
-myhessian = CBOPTHessian(
-    vib_modes = mol_freqs,
-    cav_modes = cav_freqs,
-    coupling = coupling,
-    dip_deriv = dip_deriv,  
-    n_mol = nmol,
-    polarizability = stat_polar,
-    polarization = polarization,
-    single_mode_approx = single_mode_approximation
-)
+cbopt_0_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
+                                cav_modes = cav_freqs,
+                                coupling = coupling,
+                                dip_deriv = dip_deriv,  
+                                n_mol = nmol,
+                                polarizability = stat_polar,
+                                polarization = polarization,
+                                single_mode_approx = single_mode_approximation
+                                ).build_cbopt0_hessian().eigensystem()
 
-# --- CBO-PT(0) ---
-
-cbopt_0_eigensystem     = myhessian.build_cbopt0_hessian().eigensystem()
 cbopt_0_freqs           = cbopt_0_eigensystem.freqs
 cbopt0_ir_intensity     = cbopt_0_eigensystem.build_cbopt0_ir_spec().intensities
 cbopt0_ir_spec          = cbopt_0_eigensystem.build_cbopt0_ir_spec().build_spec(spec_grid, 
                                                                        broadening=broadening, 
                                                                        cbopt_order="cbopt0_ir")
 
-# --- CBO-PT(1) ---
+# --- CBO-PT(1) IR Spectrum ---
 
-cbopt_1_eigensystem     = myhessian.build_cbopt1_hessian().eigensystem()
+cbopt_1_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
+                                cav_modes = cav_freqs,
+                                coupling = coupling,
+                                dip_deriv = dip_deriv,  
+                                n_mol = nmol,
+                                polarizability = stat_polar,
+                                polarization = polarization,
+                                single_mode_approx = single_mode_approximation
+                                ).build_cbopt1_hessian().eigensystem()
 cbopt_1_freqs           = cbopt_1_eigensystem.freqs
 cbopt1_ir_intensity     = cbopt_1_eigensystem.build_cbopt1_ir_spec().intensities
 cbopt1_ir_spec          = cbopt_1_eigensystem.build_cbopt1_ir_spec().build_spec(spec_grid, 
                                                                        broadening=broadening, 
                                                                        cbopt_order="cbopt1_ir")
 
-# --- CBO-PT(2) ---
-cbopt_2_eigensystem     = myhessian.build_cbopt2_hessian().eigensystem()
+# --- CBO-PT(2) IR Spectrum ---
+
+cbopt_2_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
+                                cav_modes = cav_freqs,
+                                coupling = coupling,
+                                dip_deriv = dip_deriv,  
+                                n_mol = nmol,
+                                polarizability = stat_polar,
+                                polarization = polarization,
+                                single_mode_approx = single_mode_approximation
+                                ).build_cbopt2_hessian().eigensystem()
 cbopt_2_freqs           = cbopt_2_eigensystem.freqs
 cbopt2_ir_intensity     = cbopt_2_eigensystem.build_cbopt2_ir_spec().intensities
 cbopt2_ir_spec          = cbopt_2_eigensystem.build_cbopt2_ir_spec().build_spec(spec_grid, 
                                                                        broadening=broadening, 
                                                                        cbopt_order="cbopt2_ir")
 
-# --- CBO-PT IR Spectra ---
-
+# --- CBO-PT IR Spectra Plots ---
 
 plt.plot(spec_grid, cbopt0_ir_spec[0], color='blue', label='CBOPT(0)')
 plt.plot(spec_grid, cbopt1_ir_spec[0], color='orange', label='CBOPT(1)')
