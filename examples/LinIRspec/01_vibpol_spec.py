@@ -6,6 +6,9 @@ Linear vibropolaritonic IR spectra from CBO-PT(n) linear response with n=0,1,2
 3+1 mode example for experimentally relevant Si-C-stretch/CH3-rocking band
 of 1-phenyl-2-trimethylsilylacetylene (PTA) around 860 cm-1.
 
+Example contains eigensystems (eigenvalues/-vectors) for CBO-PT(n) n=0,1,2 Hessians,
+corresponding frequencies (freqs), IR intensities and linear IR spectra.
+
 Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. 28, 9464-9473 (2026)
 """
 

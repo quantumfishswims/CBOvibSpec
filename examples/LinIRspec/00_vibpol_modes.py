@@ -6,11 +6,12 @@ Vibropolaritonic frequencies and eigenvectors from CBO-PT(n) with n=0,1,2
 3+1 mode example for experimentally relevant Si-C-stretch/CH3-rocking band
 of 1-phenyl-2-trimethylsilylacetylene (PTA) around 860 cm-1.
 
+Example contains CBO-PT(n) n=0,1,2 Hessians, eigensystems (eigenvalues/-vectors) and frequencies (freqs).
+
 Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. 28, 9464-9473 (2026)
 """
 import bootstrap
 import numpy as np
-import matplotlib.pyplot as plt
 from src.cbopt_vib_spec import CBOPTHessian, AU_TO_CM
 
 au_to_cm = AU_TO_CM
@@ -42,25 +43,24 @@ myhessian = CBOPTHessian(
 
 # --- CBO-PT(0) ---
 
+cbopt_0_hessian              = myhessian.build_cbopt0_hessian().hessian
 cbopt_0_eigensystem          = myhessian.build_cbopt0_hessian().eigensystem()
 cbopt_0_freqs, cbopt_0_evecs = (cbopt_0_eigensystem.freqs,
                                 cbopt_0_eigensystem.evecs)
 
 
-    # --- CBO-PT(1) ---
+# --- CBO-PT(1) ---
 
+cbopt_1_hessian              = myhessian.build_cbopt1_hessian().hessian
 cbopt_1_eigensystem                 = myhessian.build_cbopt1_hessian().eigensystem()
 cbopt_1_evals, cbopt_1_freqs, cbopt_1_evecs = (cbopt_1_eigensystem.evals,
                                                     cbopt_1_eigensystem.freqs,
                                                     cbopt_1_eigensystem.evecs)
-    # --- CBO-PT(2) ---
+# --- CBO-PT(2) ---
 
+cbopt_2_hessian              = myhessian.build_cbopt2_hessian().hessian
 cbopt_2_eigensystem                 = myhessian.build_cbopt2_hessian().eigensystem()
 cbopt_2_evals, cbopt_2_freqs, cbopt_2_evecs = (cbopt_2_eigensystem.evals,
                                                     cbopt_2_eigensystem.freqs,
                                                     cbopt_2_eigensystem.evecs)
 
-plt.plot(mol_freqs, cbopt_0_freqs*au_to_cm, 'o', label='CBOPT(0)')
-plt.plot(mol_freqs, cbopt_1_freqs*au_to_cm, 'o', label='CBOPT(1)')
-plt.legend(loc='upper left')
-plt.show()
