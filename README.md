@@ -8,6 +8,6 @@ based on cavity Born-Oppenheimer perturbation theory (CBO-PT).
 - CBO-PT in JCTC:10.1021/acs.jctc.3c00708
 - CBO-PT Linear Response (IR) in JPCL:10.1021/acs.jpclett.4c00105
 
-## Stuff
+## Description
 
 
