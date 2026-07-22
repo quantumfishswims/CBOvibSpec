@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-from src.cbopt_vib_spec import CBOPTHessian
-
+from .cbopt_vib_spec import CBOPTHessian
 
 def calcCBOPTirSpec(vib_modes,
                     cav_modes,

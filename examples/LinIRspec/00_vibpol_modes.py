@@ -12,7 +12,7 @@ Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. 28, 9464-9473 (2026)
 """
 import bootstrap
 import numpy as np
-from src.cbopt_vib_spec import CBOPTHessian, AU_TO_CM
+from src.CBOPTvibSpec import CBOPTHessian, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 
@@ -42,8 +42,9 @@ mycbopt0_hessian = CBOPTHessian(vib_modes = mol_freqs,
 
 cbopt_0_hessian              = mycbopt0_hessian.hessian
 cbopt_0_eigensystem          = mycbopt0_hessian.eigensystem()
-cbopt_0_freqs, cbopt_0_evecs = (cbopt_0_eigensystem.freqs,
-                                cbopt_0_eigensystem.evecs)
+cbopt_0_evals, cbopt_0_freqs, cbopt_0_evecs = (cbopt_0_eigensystem.evals,
+                                                cbopt_0_eigensystem.freqs,
+                                                cbopt_0_eigensystem.evecs)
 
 
 # --- CBO-PT(1) ---
@@ -60,8 +61,9 @@ mycbopt1_hessian = CBOPTHessian(vib_modes = mol_freqs,
 
 cbopt_1_hessian              = mycbopt1_hessian.hessian
 cbopt_1_eigensystem          = mycbopt1_hessian.eigensystem()
-cbopt_1_freqs, cbopt_0_evecs = (cbopt_1_eigensystem.freqs,
-                                cbopt_1_eigensystem.evecs)
+cbopt_1_evals, cbopt_1_freqs, cbopt_1_evecs = (cbopt_1_eigensystem.evals,
+                                                cbopt_1_eigensystem.freqs,
+                                                cbopt_1_eigensystem.evecs)
 
 # --- CBO-PT(2) ---
 
@@ -77,6 +79,7 @@ mycbopt2_hessian = CBOPTHessian(vib_modes = mol_freqs,
 
 cbopt_2_hessian              = mycbopt2_hessian.hessian
 cbopt_2_eigensystem          = mycbopt2_hessian.eigensystem()
-cbopt_2_freqs, cbopt_0_evecs = (cbopt_2_eigensystem.freqs,
-                                cbopt_2_eigensystem.evecs)
+cbopt_2_evals, cbopt_2_freqs, cbopt_2_evecs = (cbopt_2_eigensystem.evals,
+                                                cbopt_2_eigensystem.freqs,
+                                                cbopt_2_eigensystem.evecs)
 

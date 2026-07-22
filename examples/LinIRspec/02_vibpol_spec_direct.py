@@ -14,8 +14,7 @@ Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. 28, 9464-9473 (2026)
 import bootstrap
 import numpy as np
 import matplotlib.pyplot as plt
-from src.cbopt_vib_spec import AU_TO_CM
-from src.calc_cbopt_spec import calcCBOPTirSpec
+from src.CBOPTvibSpec import calcCBOPTirSpec, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 
@@ -29,7 +28,7 @@ nmol         = 1
 cav_freqs    = np.array([861.6])  # in cm-1
 coupling     = 0.02*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
 polarization = np.array([[0, 0, 1], [0, 1, 0]])
-single_mode_approximation = False
+single_mode_approximation = True
 
 
 # --- Spectroscopy Parameters ---
