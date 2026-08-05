@@ -7,9 +7,9 @@ to second order in the light-matter interaction potential.
 
 Definition of CBO-PT(n) Hessians and Intensities for n = 0,1,2
 
-Code requires ORCA ab-initio-data (conversion factor dip-deriv!)
+Code requires frequency-weighted dipole derivatives (cf. ORCA)
 
-Lit: Fischer, Syska, Saalfrank. JPCL, 15, 8, 2262 (2024)
+Lit: Fischer, Syska, Saalfrank. J. Phys. Chem. Lett. 2024, 15, 8, 2262-2269 (10.1021/acs.jpclett.4c00105)
 """
 
 import numpy as np
@@ -49,6 +49,32 @@ def buildSymMatrix(array, n):
     # mirror upper triangle to lower triangle
     symmat = symmat + np.triu(symmat, 1).T
     return symmat
+
+def props2polaraxis(dip_deriv, polarizability):
+    """
+    Transform Cartesian components of dipole derivative vector and polarizability tensor
+    to polarizability principal axis frame rendering choice of cavity-polarization vectors unique
+    for non-rotating systems. 
+    ----------
+    dip_deriv : array_like
+        Dipole derivatives of shape (n_modes, 3).
+    polarizability : array_like
+        Polarizability tensor of shape (3, 3).
+    Returns
+    -------
+    dip_deriv_transformed : array_like
+        Transformed dipole derivatives of shape (n_modes, 3).
+    polarizability_transformed : array_like
+        Transformed polarizability tensor of shape (3, 3).
+    """
+    
+    stat_polarize       = buildSymMatrix(polarizability, 3)
+    evals_polarize, evecs_polarize   = np.linalg.eigh(stat_polarize)
+
+    dip_derive_transfrom    = np.einsum('ij,jk->ik', dip_deriv, evecs_polarize)
+    stat_polarize_transform = np.einsum('i ,ij->ij', evals_polarize, np.eye(3))
+
+    return dip_derive_transfrom, stat_polarize_transform
 
 
 def projectDipole(dip_deriv, polarization, single_mode_approx):
@@ -118,23 +144,28 @@ class CBOPTHessian:
                  cav_modes,
                  coupling,
                  dip_deriv,
-                 n_mol,
                  polarizability,
                  polarization,
+                 n_mol,
                  single_mode_approx,
+                 polar_axis
                  ):
         
-        self.vib_modes  = np.asarray(vib_modes, dtype=float)/AU_TO_CM
-        self.cav_modes  = np.asarray(cav_modes, dtype=float)/AU_TO_CM
-        self.coupling   = float(coupling)
-        self.dip_deriv  = np.einsum('i,ij->ij', np.sqrt(2*self.vib_modes), np.asarray(dip_deriv, dtype=float))
-        self.n_mol = float(n_mol)     
-        self.polarizability = np.asarray(polarizability, dtype=float)
+        self.vib_modes          = np.asarray(vib_modes, dtype=float)/AU_TO_CM
+        self.cav_modes          = np.asarray(cav_modes, dtype=float)/AU_TO_CM
+        self.coupling           = float(coupling)
+        self.dip_deriv          = np.einsum('i,ij->ij', np.sqrt(2*self.vib_modes), np.asarray(dip_deriv, dtype=float))    
+        self.polarizability     = np.asarray(polarizability, dtype=float)
+        self.polarization       = np.asarray(polarization, dtype=float)
+        self.n_mol              = float(n_mol) 
+        self.single_mode_approx = bool(single_mode_approx)
+        self.polar_axis         = bool(polar_axis)
+
         if single_mode_approx == True:
             self.polarization   = np.asarray(polarization[0,:], dtype=float)
-        else:
-            self.polarization = np.asarray(polarization, dtype=float)
-        self.single_mode_approx = bool(single_mode_approx)
+
+        if polar_axis == True:
+            self.dip_deriv, self.polarizability = props2polaraxis(self.dip_deriv, self.polarizability)
 
         self._hessian            = None
         self.cbopt0_hessian      = None
@@ -388,7 +419,7 @@ class _CBOPTSpec:
     def intensities(self):
 
         if  self.cbopt_order == "cbopt0_ir" or self.cbopt_order == "cbopt1_ir":
-            print("Calculate molecular IR intensitites (note, those are identical for CBO-PT(n) w/ n=0,1)")
+            print("Calculate molecular IR intensitites (Equivalent for CBO-PT(0) and CBO-PT(1))")
             n_states  = self.evecs.shape[0]
 
             mol_charge          = np.zeros((n_states, 3), dtype=float)

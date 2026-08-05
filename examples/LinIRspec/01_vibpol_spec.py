@@ -9,7 +9,7 @@ of 1-phenyl-2-trimethylsilylacetylene (PTA) around 860 cm-1.
 Example contains eigensystems (eigenvalues/-vectors) for CBO-PT(n) n=0,1,2 Hessians,
 corresponding frequencies (freqs), IR intensities and linear IR spectra.
 
-Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. 28, 9464-9473 (2026)
+Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. (2026) 28 (15): 9464-9473 (10.1039/d6cp00345a)
 """
 
 import bootstrap
@@ -30,6 +30,7 @@ cav_freqs    = np.array([861.6])  # in cm-1
 coupling     = 0.02*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
 polarization = np.array([[0, 0, 1], [0, 1, 0]])
 single_mode_approximation = True
+polar_axis = True
 
 # --- Spectroscopy Parameters ---
 
@@ -44,10 +45,11 @@ cbopt_0_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
                                 cav_modes = cav_freqs,
                                 coupling = coupling,
                                 dip_deriv = dip_deriv,  
-                                n_mol = nmol,
                                 polarizability = stat_polar,
                                 polarization = polarization,
-                                single_mode_approx = single_mode_approximation
+                                n_mol = nmol,
+                                single_mode_approx = single_mode_approximation,
+                                polar_axis = polar_axis
                                 ).build_cbopt0_hessian().eigensystem()
 
 cbopt_0_freqs           = cbopt_0_eigensystem.freqs
@@ -61,11 +63,12 @@ cbopt0_ir_spec          = cbopt_0_eigensystem.build_cbopt0_ir_spec().build_spec(
 cbopt_1_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
                                 cav_modes = cav_freqs,
                                 coupling = coupling,
-                                dip_deriv = dip_deriv,  
-                                n_mol = nmol,
+                                dip_deriv = dip_deriv, 
                                 polarizability = stat_polar,
                                 polarization = polarization,
-                                single_mode_approx = single_mode_approximation
+                                n_mol = nmol,
+                                single_mode_approx = single_mode_approximation,
+                                polar_axis = polar_axis
                                 ).build_cbopt1_hessian().eigensystem()
 cbopt_1_freqs           = cbopt_1_eigensystem.freqs
 cbopt1_ir_intensity     = cbopt_1_eigensystem.build_cbopt1_ir_spec().intensities
@@ -79,10 +82,11 @@ cbopt_2_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
                                 cav_modes = cav_freqs,
                                 coupling = coupling,
                                 dip_deriv = dip_deriv,  
-                                n_mol = nmol,
                                 polarizability = stat_polar,
                                 polarization = polarization,
-                                single_mode_approx = single_mode_approximation
+                                n_mol = nmol,
+                                single_mode_approx = single_mode_approximation,
+                                polar_axis = polar_axis
                                 ).build_cbopt2_hessian().eigensystem()
 cbopt_2_freqs           = cbopt_2_eigensystem.freqs
 cbopt2_ir_intensity     = cbopt_2_eigensystem.build_cbopt2_ir_spec().intensities
