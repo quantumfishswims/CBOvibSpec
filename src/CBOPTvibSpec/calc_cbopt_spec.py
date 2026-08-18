@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """
-Eric Fischer, 08.07.2026, Version v3.0
-
 Direct calculation of CBO-PT IR spectra with frequencies 
 and intensities as output.
 

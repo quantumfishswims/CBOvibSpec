@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
-Eric Fischer, 08.07.2026, Version v3.0
-
 Cavity Born-Oppenheimer perturbation theory (CBO-PT) linear response approach up
 to second order in the light-matter interaction potential. 
 
 Definition of CBO-PT(n) Hessians and Intensities for n = 0,1,2
 
-Code requires frequency-weighted dipole derivatives (cf. ORCA)
+Code requires frequency-weighted dipole derivatives (vibrational overlap, cf. ORCA)
 
 Lit: Fischer, Syska, Saalfrank. J. Phys. Chem. Lett. 2024, 15, 8, 2262-2269 (10.1021/acs.jpclett.4c00105)
 """
