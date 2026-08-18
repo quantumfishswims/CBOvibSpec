@@ -8,7 +8,7 @@ of 1-phenyl-2-trimethylsilylacetylene (PTA) around 860 cm-1.
 
 Direct evaluation of linear IR spectra and frequencies for CBO-PT(n), n=0,1,2.
 
-Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. 28, 9464-9473 (2026)
+Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. (2026) 28 (15): 9464-9473 (10.1039/d6cp00345a)
 """
 
 import bootstrap
@@ -29,6 +29,7 @@ cav_freqs    = np.array([861.6])  # in cm-1
 coupling     = 0.02*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
 polarization = np.array([[0, 0, 1], [0, 1, 0]])
 single_mode_approximation = True
+polar_axis = True
 
 
 # --- Spectroscopy Parameters ---
@@ -40,40 +41,43 @@ broadening          = 10 # cm-1
 
 # --- CBO-PT IR Spectrum ---
 
-cbopt0_ir_spec, cbopt0_freqs  = calcCBOPTirSpec(mol_freqs,
-                                                cav_freqs,
-                                                coupling,
-                                                dip_deriv,  
-                                                nmol,
-                                                stat_polar,
-                                                polarization,
-                                                single_mode_approximation,
-                                                spec_grid,
-                                                broadening,
+cbopt0_ir_spec, cbopt0_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
+                                                cav_modes = cav_freqs,
+                                                coupling = coupling,
+                                                dip_deriv = dip_deriv,  
+                                                polarizability = stat_polar,
+                                                polarization = polarization,
+                                                n_mol = nmol,
+                                                single_mode_approx = single_mode_approximation,
+                                                polar_axis = polar_axis,
+                                                spec_grid = spec_grid,
+                                                broadening = broadening,
                                                 cbopt_order = "cbopt0_ir")
 
-cbopt1_ir_spec, cbopt1_freqs  = calcCBOPTirSpec(mol_freqs,
-                                                cav_freqs,
-                                                coupling,
-                                                dip_deriv,  
-                                                nmol,
-                                                stat_polar,
-                                                polarization,
-                                                single_mode_approximation,
-                                                spec_grid,
-                                                broadening,
+cbopt1_ir_spec, cbopt1_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
+                                                cav_modes = cav_freqs,
+                                                coupling = coupling,
+                                                dip_deriv = dip_deriv,
+                                                polarizability = stat_polar,
+                                                polarization = polarization,
+                                                n_mol = nmol,
+                                                single_mode_approx = single_mode_approximation,
+                                                polar_axis = polar_axis,
+                                                spec_grid = spec_grid,
+                                                broadening = broadening,
                                                 cbopt_order = "cbopt1_ir")
 
-cbopt2_ir_spec, cbopt2_freqs  = calcCBOPTirSpec(mol_freqs,
-                                                cav_freqs,
-                                                coupling,
-                                                dip_deriv,  
-                                                nmol,
-                                                stat_polar,
-                                                polarization,
-                                                single_mode_approximation,
-                                                spec_grid,
-                                                broadening,
+cbopt2_ir_spec, cbopt2_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
+                                                cav_modes = cav_freqs,
+                                                coupling = coupling,
+                                                dip_deriv = dip_deriv,
+                                                polarizability = stat_polar,
+                                                polarization = polarization,
+                                                n_mol = nmol,
+                                                single_mode_approx = single_mode_approximation,
+                                                polar_axis = polar_axis,
+                                                spec_grid = spec_grid,
+                                                broadening = broadening,
                                                 cbopt_order = "cbopt2_ir")
 
 # --- CBO-PT IR Spectra Plots ---

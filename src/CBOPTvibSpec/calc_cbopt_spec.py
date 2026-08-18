@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
+"""
+Direct calculation of CBO-PT IR spectra with frequencies 
+and intensities as output.
+
+"""
 
 from .cbopt_vib_spec import CBOPTHessian
 
 def calcCBOPTirSpec(vib_modes,
                     cav_modes,
                     coupling,
-                    dip_deriv,  
-                    n_mol,
+                    dip_deriv, 
                     polarizability,
                     polarization,
+                    n_mol,    
                     single_mode_approx,
+                    polar_axis,
                     spec_grid,
                     broadening,
                     cbopt_order = None):
@@ -18,10 +24,11 @@ def calcCBOPTirSpec(vib_modes,
                                 cav_modes,
                                 coupling,
                                 dip_deriv,  
-                                n_mol,
                                 polarizability,
                                 polarization,
-                                single_mode_approx
+                                n_mol,
+                                single_mode_approx,
+                                polar_axis
                                 )
     
     if cbopt_order == "cbopt0_ir":

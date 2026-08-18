@@ -8,7 +8,7 @@ of 1-phenyl-2-trimethylsilylacetylene (PTA) around 860 cm-1.
 
 Example contains CBO-PT(n) n=0,1,2 Hessians, eigensystems (eigenvalues/-vectors) and frequencies (freqs).
 
-Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. 28, 9464-9473 (2026)
+Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. (2026) 28 (15): 9464-9473 (10.1039/d6cp00345a)
 """
 import bootstrap
 import numpy as np
@@ -27,6 +27,7 @@ cav_freqs    = np.array([861.6])  # in cm-1
 coupling     = 0.02*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
 polarization = np.array([[0, 0, 1], [0, 1, 0]])
 single_mode_approximation = True
+polar_axis = True
 
 # --- CBO-PT(0) ---
 
@@ -34,10 +35,11 @@ mycbopt0_hessian = CBOPTHessian(vib_modes = mol_freqs,
                                 cav_modes = cav_freqs,
                                 coupling = coupling,
                                 dip_deriv = dip_deriv,  
-                                n_mol = nmol,
                                 polarizability = stat_polar,
                                 polarization = polarization,
-                                single_mode_approx = single_mode_approximation
+                                n_mol = nmol,
+                                single_mode_approx = single_mode_approximation,
+                                polar_axis = polar_axis
                                 ).build_cbopt0_hessian()
 
 cbopt_0_hessian              = mycbopt0_hessian.hessian
@@ -53,10 +55,11 @@ mycbopt1_hessian = CBOPTHessian(vib_modes = mol_freqs,
                                 cav_modes = cav_freqs,
                                 coupling = coupling,
                                 dip_deriv = dip_deriv,  
-                                n_mol = nmol,
                                 polarizability = stat_polar,
                                 polarization = polarization,
-                                single_mode_approx = single_mode_approximation
+                                n_mol = nmol,
+                                single_mode_approx = single_mode_approximation,
+                                polar_axis = polar_axis
                                 ).build_cbopt1_hessian()
 
 cbopt_1_hessian              = mycbopt1_hessian.hessian
@@ -71,10 +74,11 @@ mycbopt2_hessian = CBOPTHessian(vib_modes = mol_freqs,
                                 cav_modes = cav_freqs,
                                 coupling = coupling,
                                 dip_deriv = dip_deriv,  
-                                n_mol = nmol,
                                 polarizability = stat_polar,
                                 polarization = polarization,
-                                single_mode_approx = single_mode_approximation
+                                n_mol = nmol,
+                                single_mode_approx = single_mode_approximation,
+                                polar_axis = polar_axis
                                 ).build_cbopt2_hessian()
 
 cbopt_2_hessian              = mycbopt2_hessian.hessian
