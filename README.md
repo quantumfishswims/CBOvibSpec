@@ -1,30 +1,32 @@
 # CBOvibSpec
 
-This repository contains a python module implementing linear vibrational spectroscopy 
-approaches for vibro-polaritonic chemistry. The methodology is based on cavity Born-Oppenheimer perturbation theory (CBO-PT).  
+**CBOvibSpec** is a Python package providing a linear response implementation for **vibrational polariton spectroscopy** via **Cavity Born-Oppenheimer Perturbation Theory (CBO-PT)**. 
+
+##Overview 
+
+The **CBOvibSpec** package enables the computational study of vibrational polaritons and their linear infrared (IR) spectra in the cavity Born-Oppenheimer framework based on *ab initio* input data
+obtaineable from state-of-the-art quantum chemistry software packages. CBO-PT approximately accounts for electron-cavity feedback leading for example to matter-induced cavity frequency screening and IR intensities with
+light-matter hybrid components.
+
+### Key Features
+
+- **CBOPTHessian**: Vibro-polaritonic Hessian accounting for cavity-electron feedback up to second-order CBO-PT. Provides access to vibrational polariton modes and frequencies in double harmonic approximation.
+- **CBOPTSpec (IR)**: Linear vibro-polaritonic infrared spectra accounting for cavity-electron feedback up to second-order CBO-PT. Provides access to vibro-polaritonic IR intensities.
 
 ### Data Requirements 
+*Ab initio* quantum chemistry data required: 
 
-Requires ab-initio quantum chemistry data: 
+- Molecular normal-mode frequencies
+- Dipole derivative vectors including vibrational overlap 
+- Static dipole polarizability tensor
 
-Molecular normal-mode frequencies, dipole derivative vectors including vibrational overlap and 
-the static dipole polarizability tensor.
+## Literature 
 
-### Literature 
+The theoretical background is described in:
 
-The theoretical background (CBO-PT, CBO-PT Linear Response) and model applications were presented in two publications:
-
-- E.W. Fischer, J.A. Syska, P. Saalfrank. J. Phys. Chem. Lett. (2024) 15, 8, 2262–2269, doi:10.1021/acs.jpclett.4c00105
-- E.W. Fischer, P. Saalfrank. J. Chem. Theory Comput. (2023) 19, 20, 7215–7229, doi:10.1021/acs.jctc.3c00708
-
-## CBOvibSpec
-
-### CBOPTHessian
-
-Vibro-polaritonic Hessian accounting for cavity-electron feedback up to second order CBO-PT.
-Provides access to vibrational polariton modes and frequencies in double harmonic approximation.
-
-### CBOPTSpec
-
-Linear vibro-polaritonic infrared spectra accounting for cavity-electron feedback up to second order CBO-PT.
-Relies on vibrational polariton modes and frequencies from CBOPTHessian.
+1. **E.W. Fischer**, J.A. Syska, P. Saalfrank. "A quantum chemistry approach to linear vibro-polaritonic infrared spectra with perturbative electron–photon correlation." 
+	*J. Phys. Chem. Lett.* (2024) 15, 8, 2262–2269.
+	DOI: doi:10.1021/acs.jpclett.4c00105
+2. **E.W. Fischer**, P. Saalfrank. "Beyond Cavity Born–Oppenheimer: On Nonadiabatic Coupling and Effective Ground State Hamiltonians in Vibro-Polaritonic Chemistry."
+	*J. Chem. Theory Comput.* (2023) 19, 20, 7215–7229.
+	DOI: 10.1021/acs.jctc.3c00708
