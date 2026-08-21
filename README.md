@@ -3,8 +3,14 @@
 This repository contains a python module implementing linear vibrational spectroscopy 
 approaches for vibro-polaritonic chemistry. The methodology is based on cavity Born-Oppenheimer perturbation theory (CBO-PT).  
 
-Requires ab-initio quantum chemistry data: Molecular normal-mode frequencies, dipole derivative vectors including
-vibrational overlap and the static dipole polarizability tensor.
+### Data Requirements 
+
+Requires ab-initio quantum chemistry data: 
+
+Molecular normal-mode frequencies, dipole derivative vectors including vibrational overlap and 
+the static dipole polarizability tensor.
+
+### Literature 
 
 The theoretical background (CBO-PT, CBO-PT Linear Response) and model applications were presented in two publications:
 
