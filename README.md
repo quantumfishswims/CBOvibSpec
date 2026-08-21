@@ -30,4 +30,4 @@ The theoretical background is described in:
 	*J. Chem. Theory Comput.* (2023) 19, 20, 7215–7229.
 	DOI: 10.1021/acs.jctc.3c00708
 	
-Please cite these references when using CBOqChem in your research.
+Please cite these references when using CBOvibSpec in your research.
