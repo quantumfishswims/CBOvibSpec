@@ -15,6 +15,16 @@ The theoretical background (CBO-PT, CBO-PT Linear Response) and model applicatio
 
 ### CBOPTHessian
 
+Vibro-polaritonic Hessian accounting for cavity-electron feedback up to second order CBO-PT.
+Provides access to vibrational polariton modes and frequencies in double harmonic approximation.
+
+### CBOPTSpec
+
+Linear vibro-polaritonic infrared spectra accounting for cavity-electron feedback up to second order CBO-PT.
+Relies on vibrational polariton modes and frequencies from CBOPTHessian.
+
+### CBOPTHessian
+
 Vibro-polaritonic Hessian accounting for cavity-electron feedback up to second order CBO-PT. 
 Provides access to vibrational polariton modes and frequencies in double harmonic approximation. 
 
