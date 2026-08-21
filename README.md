@@ -2,11 +2,10 @@
 
 **CBOvibSpec** is a Python package providing a linear response implementation for **vibrational polariton spectroscopy** via **Cavity Born-Oppenheimer Perturbation Theory (CBO-PT)**. 
 
-##Overview 
+## Overview 
 
-The **CBOvibSpec** package enables the computational study of vibrational polaritons and their linear infrared (IR) spectra in the cavity Born-Oppenheimer framework based on *ab initio* input data
-obtaineable from state-of-the-art quantum chemistry software packages. CBO-PT approximately accounts for electron-cavity feedback leading for example to matter-induced cavity frequency screening and IR intensities with
-light-matter hybrid components.
+The **CBOvibSpec** package enables the computational study of vibrational polaritons and their linear infrared (IR) spectra in the cavity Born-Oppenheimer framework. CBO-PT approximately accounts for electron-cavity feedback leading for example to matter-induced cavity frequency screening and IR intensities with
+light-matter hybrid components.  The package is based on *ab initio* input data obtaineable from state-of-the-art quantum chemistry software packages. 
 
 ### Key Features
 
@@ -30,3 +29,5 @@ The theoretical background is described in:
 2. **E.W. Fischer**, P. Saalfrank. "Beyond Cavity Born–Oppenheimer: On Nonadiabatic Coupling and Effective Ground State Hamiltonians in Vibro-Polaritonic Chemistry."
 	*J. Chem. Theory Comput.* (2023) 19, 20, 7215–7229.
 	DOI: 10.1021/acs.jctc.3c00708
+	
+Please cite these references when using CBOqChem in your research.
