@@ -40,76 +40,72 @@ broadening          = 10 # cm-1
 
 # --- CBO-PT(1) IR Spectrum ---
 
-cbopt_1_eigensystem_nonpolar     = CBOPTHessian(vib_modes = mol_freqs,
-                                                cav_modes = cav_freqs,
-                                                coupling = coupling,
-                                                dip_deriv = dip_deriv, 
-                                                polarizability = stat_polar,
-                                                polarization = polarization,
-                                                n_mol = nmol,
-                                                single_mode_approx = single_mode_approximation,
-                                                polar_axis = False
-                                                ).build_cbopt1_hessian().eigensystem()
+cbopt_1_eigensystem_nonpolar = CBOPTHessian(vib_modes = mol_freqs,
+                                            cav_modes = cav_freqs,
+                                            coupling = coupling,
+                                            dip_deriv = dip_deriv, 
+                                            polarizability = stat_polar,
+                                            polarization = polarization,
+                                            n_mol = nmol,
+                                            single_mode_approx = single_mode_approximation,
+                                            polar_axis = False
+                                            ).build_cbopt1_hessian().eigensystem()
 
-cbopt1_ir_spec_nonpolar          = cbopt_1_eigensystem_nonpolar.build_cbopt1_ir_spec().build_spec(spec_grid, 
-                                                                       broadening=broadening, 
-                                                                       cbopt_order="cbopt1_ir")
+cbopt1_ir_spec_nonpolar      = cbopt_1_eigensystem_nonpolar.cbopt_ir_response().build_spec(spec_grid, broadening=broadening)
 
-cbopt_1_eigensystem_polar     = CBOPTHessian(vib_modes = mol_freqs,
-                                                cav_modes = cav_freqs,
-                                                coupling = coupling,
-                                                dip_deriv = dip_deriv, 
-                                                polarizability = stat_polar,
-                                                polarization = polarization,
-                                                n_mol = nmol,
-                                                single_mode_approx = single_mode_approximation,
-                                                polar_axis = True
-                                                ).build_cbopt1_hessian().eigensystem()
+cbopt_1_eigensystem_polar    = CBOPTHessian(vib_modes = mol_freqs,
+                                            cav_modes = cav_freqs,
+                                            coupling = coupling,
+                                            dip_deriv = dip_deriv, 
+                                            polarizability = stat_polar,
+                                            polarization = polarization,
+                                            n_mol = nmol,
+                                            single_mode_approx = single_mode_approximation,
+                                            polar_axis = True
+                                            ).build_cbopt1_hessian().eigensystem()
 
-cbopt1_ir_spec_polar          = cbopt_1_eigensystem_polar.build_cbopt1_ir_spec().build_spec(spec_grid, 
-                                                                       broadening=broadening, 
-                                                                       cbopt_order="cbopt1_ir")
+cbopt1_ir_spec_polar         = cbopt_1_eigensystem_polar.cbopt_ir_response().build_spec(spec_grid, broadening=broadening)
 
 # --- CBO-PT(2) IR Spectrum ---
 
-cbopt_2_eigensystem_nonpolar     = CBOPTHessian(vib_modes = mol_freqs,
-                                                cav_modes = cav_freqs,
-                                                coupling = coupling,
-                                                dip_deriv = dip_deriv,  
-                                                polarizability = stat_polar,
-                                                polarization = polarization,
-                                                n_mol = nmol,
-                                                single_mode_approx = single_mode_approximation,
-                                                polar_axis = False
-                                                ).build_cbopt2_hessian().eigensystem()
+cbopt_2_eigensystem_nonpolar = CBOPTHessian(vib_modes = mol_freqs,
+                                            cav_modes = cav_freqs,
+                                            coupling = coupling,
+                                            dip_deriv = dip_deriv,  
+                                            polarizability = stat_polar,
+                                            polarization = polarization,
+                                            n_mol = nmol,
+                                            single_mode_approx = single_mode_approximation,
+                                            polar_axis = False
+                                            ).build_cbopt2_hessian().eigensystem()
 
-cbopt2_ir_spec_nonpolar          = cbopt_2_eigensystem_nonpolar.build_cbopt2_ir_spec().build_spec(spec_grid, 
-                                                                        broadening=broadening, 
-                                                                        cbopt_order="cbopt2_ir")
+cbopt2_ir_spec_nonpolar      = cbopt_2_eigensystem_nonpolar.cbopt_ir_response().build_spec(spec_grid, broadening=broadening)
 
-cbopt_2_eigensystem_polar     = CBOPTHessian(vib_modes = mol_freqs,
-                                                cav_modes = cav_freqs,
-                                                coupling = coupling,
-                                                dip_deriv = dip_deriv,  
-                                                polarizability = stat_polar,
-                                                polarization = polarization,
-                                                n_mol = nmol,
-                                                single_mode_approx = single_mode_approximation,
-                                                polar_axis = True
-                                                ).build_cbopt2_hessian().eigensystem()
+cbopt_2_eigensystem_polar    = CBOPTHessian(vib_modes = mol_freqs,
+                                            cav_modes = cav_freqs,
+                                            coupling = coupling,
+                                            dip_deriv = dip_deriv,  
+                                            polarizability = stat_polar,
+                                            polarization = polarization,
+                                            n_mol = nmol,
+                                            single_mode_approx = single_mode_approximation,
+                                            polar_axis = True
+                                            ).build_cbopt2_hessian().eigensystem()
 
-cbopt2_ir_spec_polar          = cbopt_2_eigensystem_polar.build_cbopt2_ir_spec().build_spec(spec_grid, 
-                                                                       broadening=broadening, 
-                                                                       cbopt_order="cbopt2_ir")
+cbopt2_ir_spec_polar          = cbopt_2_eigensystem_polar.cbopt_ir_response().build_spec(spec_grid, broadening=broadening)
 
 # --- CBO-PT IR Spectra Plots ---
 
 plt.plot(spec_grid, cbopt1_ir_spec_nonpolar[0]  , color='orange', linestyle = 'dashed',  label='CBOPT(1), non-polar axis')
 plt.plot(spec_grid, cbopt1_ir_spec_polar[0]     , color='orange', linestyle = 'solid', label='CBOPT(1), polar axis',)
+plt.xlabel('Wavenumbers [cm$^{-1}$]')
+plt.ylabel('IR Intensity [a.u.]')
 plt.legend(loc='upper left')
 plt.show()
 
 plt.plot(spec_grid, cbopt2_ir_spec_nonpolar[0][0], color='red',  linestyle = 'dashed',  label='CBOPT(2), non-polar axis')
 plt.plot(spec_grid, cbopt2_ir_spec_polar[0][0]  ,  color='red',  linestyle = 'solid', label='CBOPT(2), polar axis')
+plt.xlabel('Wavenumbers [cm$^{-1}$]')
+plt.ylabel('IR Intensity [a.u.]')
 plt.legend(loc='upper right')
 plt.show()

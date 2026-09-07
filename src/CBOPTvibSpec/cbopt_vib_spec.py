@@ -172,6 +172,7 @@ class CBOPTHessian:
         self.evals               = None
         self.freqs               = None
         self.evecs               = None
+        self.cbopt_order         = None
 
         self._validate_inputs()
         
@@ -224,6 +225,7 @@ class CBOPTHessian:
 
 
     def build_cbopt0_hessian(self):
+        self.cbopt_order    = "cbopt_0"
         vib_modes           = self.vib_modes
         n_vib               = len(vib_modes)
 
@@ -236,6 +238,7 @@ class CBOPTHessian:
         return self
 
     def build_cbopt1_hessian(self):
+        self.cbopt_order    = "cbopt_1"
         vib_modes           = self.vib_modes
         cav_modes           = self.cav_modes
         coup                = self.coupling
@@ -294,7 +297,9 @@ class CBOPTHessian:
         return self
 
     def build_cbopt2_hessian(self):
-        
+        self.hessian        = self.build_cbopt1_hessian().hessian 
+        self.cbopt_order    = "cbopt_2"
+
         vib_modes           = self.vib_modes
         cav_modes           = self.cav_modes
         coup                = self.coupling
@@ -366,8 +371,8 @@ class CBOPTHessian:
                     self.cbopt2_corr[n_vib + n_cav + i_cav, i_vib] = 0.5*coup**3*n_cav*cav_modes[i_cav]*np.einsum('i,i', proj_stat_polarize[1, :], proj_dip_deriv[i_vib, :])
                     self.cbopt2_corr[i_vib, n_vib + n_cav + i_cav] = self.cbopt2_corr[n_vib + n_cav + i_cav, i_vib]
 
-        self.hessian = self.build_cbopt1_hessian().hessian + self.cbopt2_corr
-        
+        self.hessian += self.cbopt2_corr
+
         return self
     
     def eigensystem(self):
@@ -379,25 +384,22 @@ class CBOPTHessian:
         self.evecs = eigenvectors
         return self
     
-    def build_cbopt0_ir_spec(self):
-        return _CBOPTSpec(self, cbopt_order="cbopt0_ir")
+    def cbopt_ir_response(self):
+        return _CBOPTSpec(self, spec_type="ir")
     
-    def build_cbopt1_ir_spec(self):
-        return _CBOPTSpec(self, cbopt_order="cbopt1_ir")
-    
-    def build_cbopt2_ir_spec(self):
-        return _CBOPTSpec(self, cbopt_order="cbopt2_ir")
-
+    def cbopt_raman_response(self):
+        return NotImplementedError("CBO-PT Raman response is not implemented yet.")
 
 
 class _CBOPTSpec:
     def __init__(self,
                  CBOPTHessian_instance: 'CBOPTHessian',
-                 cbopt_order: str
+                 spec_type: str
                  ):
         
         self.hessian            = CBOPTHessian_instance
-        self.cbopt_order        = cbopt_order # "cbopt0_ir" or "cbopt1_ir" or "cbopt2_ir"
+        self.cbopt_order        = CBOPTHessian_instance.cbopt_order
+        self.spec_type          = spec_type # "ir" or "raman    "
 
         self.vib_modes           = CBOPTHessian_instance.vib_modes
         self.cav_modes           = CBOPTHessian_instance.cav_modes
@@ -416,7 +418,7 @@ class _CBOPTSpec:
     @property
     def intensities(self):
 
-        if  self.cbopt_order == "cbopt0_ir" or self.cbopt_order == "cbopt1_ir":
+        if  self.spec_type == "ir" and (self.cbopt_order == "cbopt_0" or self.cbopt_order == "cbopt_1"):
             print("Calculate molecular IR intensitites (Equivalent for CBO-PT(0) and CBO-PT(1))")
             n_states  = self.evecs.shape[0]
 
@@ -434,7 +436,7 @@ class _CBOPTSpec:
             self._intensities = mol_intensity.copy()
             
     
-        elif  self.cbopt_order == "cbopt2_ir":
+        elif self.spec_type == "ir" and self.cbopt_order == "cbopt_2":
             print("Calculate CBO-PT(2) IR intensities")
             n_states            = self.evecs.shape[0]
             n_vib               = len(self.vib_modes)
@@ -499,14 +501,13 @@ class _CBOPTSpec:
     
     def build_spec(self, 
                    freq_grid, 
-                   broadening: float,
-                   cbopt_order: str):
+                   broadening: float):
 
         freqs       = self.freqs
         vib_modes   = self.vib_modes
         intensity   = self.intensities
 
-        if cbopt_order == "cbopt0_ir":
+        if self.cbopt_order == "cbopt_0":
 
             spec_full  = np.zeros(len(freq_grid), dtype=float)
             spec_stick = np.zeros(len(vib_modes), dtype=float)
@@ -523,7 +524,7 @@ class _CBOPTSpec:
                 
             return (spec_full, spec_stick)
 
-        elif cbopt_order == "cbopt1_ir":
+        elif self.cbopt_order == "cbopt_1":
 
             spec_full  = np.zeros(len(freq_grid), dtype=float)
             spec_stick = np.zeros(len(freqs), dtype=float)
@@ -541,7 +542,7 @@ class _CBOPTSpec:
                 
             return (spec_full, spec_stick)
 
-        elif cbopt_order == "cbopt2_ir":
+        elif self.cbopt_order == "cbopt_2":
 
             spec_full  = np.zeros((4,len(freq_grid)), dtype=float)
 
@@ -562,7 +563,7 @@ class _CBOPTSpec:
             return (spec_full, spec_stick)
         
         else:
-            raise ValueError(f"Invalid cbopt_order: {cbopt_order}. Only 'cboptn_ir' for n = 0,1,2 implemented.")
+            raise ValueError(f"Invalid cbopt_order: {self.cbopt_order}. Only 'cbopt_n' for n = 0,1,2 implemented.")
 
         
 

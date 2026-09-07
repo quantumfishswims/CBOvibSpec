@@ -53,10 +53,11 @@ cbopt_0_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
                                 ).build_cbopt0_hessian().eigensystem()
 
 cbopt_0_freqs           = cbopt_0_eigensystem.freqs
-cbopt0_ir_intensity     = cbopt_0_eigensystem.build_cbopt0_ir_spec().intensities
-cbopt0_ir_spec          = cbopt_0_eigensystem.build_cbopt0_ir_spec().build_spec(spec_grid, 
-                                                                       broadening=broadening, 
-                                                                       cbopt_order="cbopt0_ir")
+cbopt_0_ir_response     = cbopt_0_eigensystem.cbopt_ir_response()
+cbopt_0_ir_spec         = cbopt_0_ir_response.build_spec(spec_grid, broadening=broadening)
+
+# bare cbopt_0_intensities; cbopt_0_ir_spec contains Lorentzian-weighted intensities
+cbopt_0_ir_intensity    = cbopt_0_ir_response.intensities
 
 # --- CBO-PT(1) IR Spectrum ---
 
@@ -70,11 +71,13 @@ cbopt_1_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
                                 single_mode_approx = single_mode_approximation,
                                 polar_axis = polar_axis
                                 ).build_cbopt1_hessian().eigensystem()
+
 cbopt_1_freqs           = cbopt_1_eigensystem.freqs
-cbopt1_ir_intensity     = cbopt_1_eigensystem.build_cbopt1_ir_spec().intensities
-cbopt1_ir_spec          = cbopt_1_eigensystem.build_cbopt1_ir_spec().build_spec(spec_grid, 
-                                                                       broadening=broadening, 
-                                                                       cbopt_order="cbopt1_ir")
+cbopt_1_ir_response     = cbopt_1_eigensystem.cbopt_ir_response()
+cbopt_1_ir_spec         = cbopt_1_ir_response.build_spec(spec_grid, broadening=broadening)
+
+# cf. cbopt_0_ir_intensity
+cbopt_1_ir_intensity    = cbopt_1_ir_response.intensities 
 
 # --- CBO-PT(2) IR Spectrum ---
 
@@ -88,26 +91,32 @@ cbopt_2_eigensystem     = CBOPTHessian(vib_modes = mol_freqs,
                                 single_mode_approx = single_mode_approximation,
                                 polar_axis = polar_axis
                                 ).build_cbopt2_hessian().eigensystem()
+
 cbopt_2_freqs           = cbopt_2_eigensystem.freqs
-cbopt2_ir_intensity     = cbopt_2_eigensystem.build_cbopt2_ir_spec().intensities
-cbopt2_ir_spec          = cbopt_2_eigensystem.build_cbopt2_ir_spec().build_spec(spec_grid, 
-                                                                       broadening=broadening, 
-                                                                       cbopt_order="cbopt2_ir")
+cbopt_2_ir_response     = cbopt_2_eigensystem.cbopt_ir_response()
+cbopt_2_ir_spec         = cbopt_2_ir_response.build_spec(spec_grid, broadening=broadening)
+
+# cf. cbopt_0_ir_intensity
+cbopt_2_ir_intensity    = cbopt_2_ir_response.intensities
 
 # --- CBO-PT IR Spectra Plots ---
 
-plt.plot(spec_grid, cbopt0_ir_spec[0], color='blue', label='CBOPT(0)')
-plt.plot(spec_grid, cbopt1_ir_spec[0], color='orange', label='CBOPT(1)')
-plt.plot(spec_grid, cbopt2_ir_spec[0][0], color='green', label='CBOPT(2)')
-plt.stem(mol_freqs, cbopt0_ir_spec[1], markerfmt='+', linefmt='blue', label='CBOPT(0) stick')
-plt.stem(cbopt_1_freqs*au_to_cm, cbopt1_ir_spec[1], markerfmt='x', linefmt='orange', label='CBOPT(1) stick')
-plt.stem(cbopt_2_freqs*au_to_cm, cbopt2_ir_spec[1][0], markerfmt='o', linefmt='green', label='CBOPT(2) stick')
-plt.legend(loc='upper left')
+plt.plot(spec_grid, cbopt_0_ir_spec[0], color='blue', label='CBOPT(0)')
+plt.plot(spec_grid, cbopt_1_ir_spec[0], color='orange', label='CBOPT(1)')
+plt.plot(spec_grid, cbopt_2_ir_spec[0][0], color='green', label='CBOPT(2)')
+plt.stem(mol_freqs, cbopt_0_ir_spec[1], markerfmt='+', linefmt='blue', label='CBOPT(0) stick')
+plt.stem(cbopt_1_freqs*au_to_cm, cbopt_1_ir_spec[1], markerfmt='x', linefmt='orange', label='CBOPT(1) stick')
+plt.stem(cbopt_2_freqs*au_to_cm, cbopt_2_ir_spec[1][0], markerfmt='o', linefmt='green', label='CBOPT(2) stick')
+plt.xlabel('Wavenumbers [cm$^{-1}$]')
+plt.ylabel('IR Intensity [a.u.]')
+plt.legend(loc='upper right')
 plt.show()
 
-plt.plot(spec_grid, cbopt2_ir_spec[0][0], label='CBOPT(2)')
-plt.plot(spec_grid, cbopt2_ir_spec[0][1], label='CBOPT(2) mol')
-plt.plot(spec_grid, cbopt2_ir_spec[0][2], label='CBOPT(2) cav')
-plt.plot(spec_grid, cbopt2_ir_spec[0][3], label='CBOPT(2) mix')
-plt.legend(loc='upper left')
+plt.plot(spec_grid, cbopt_2_ir_spec[0][0], label='CBOPT(2)')
+plt.plot(spec_grid, cbopt_2_ir_spec[0][1], label='CBOPT(2) mol')
+plt.plot(spec_grid, cbopt_2_ir_spec[0][2], label='CBOPT(2) cav')
+plt.plot(spec_grid, cbopt_2_ir_spec[0][3], label='CBOPT(2) mix')
+plt.xlabel('Wavenumbers [cm$^{-1}$]')
+plt.ylabel('IR Intensity [a.u.]')
+plt.legend(loc='upper right')
 plt.show()

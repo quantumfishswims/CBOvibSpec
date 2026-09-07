@@ -7,7 +7,7 @@ and intensities as output.
 
 from .cbopt_vib_spec import CBOPTHessian
 
-def calcCBOPTirSpec(vib_modes,
+def CBOPTSpecIR(vib_modes,
                     cav_modes,
                     coupling,
                     dip_deriv, 
@@ -31,38 +31,24 @@ def calcCBOPTirSpec(vib_modes,
                                 polar_axis
                                 )
     
-    if cbopt_order == "cbopt0_ir":
-        cbopt_eigensystem   = cboptHessian.build_cbopt0_hessian().eigensystem()
-        
-        cbopt_freqs         = cbopt_eigensystem.freqs
-                                    
-        cbopt_ir_spec       = cbopt_eigensystem.build_cbopt0_ir_spec().build_spec(spec_grid, 
-                                                                                    broadening=broadening, 
-                                                                                    cbopt_order="cbopt0_ir")
+    if cbopt_order == "cbopt_0":
+        cbopt_eigensystem   = cboptHessian.build_cbopt0_hessian().eigensystem()        
+        cbopt_freqs         = cbopt_eigensystem.freqs                                    
+        cbopt_ir_spec       = cbopt_eigensystem.cbopt_ir_response().build_spec(spec_grid, broadening=broadening)
+
         return cbopt_ir_spec, cbopt_freqs
     
-    elif cbopt_order == "cbopt1_ir":
-        cbopt_eigensystem   = cboptHessian.build_cbopt1_hessian()\
-                                            .eigensystem()
-        
+    elif cbopt_order == "cbopt_1":
+        cbopt_eigensystem   = cboptHessian.build_cbopt1_hessian().eigensystem()
         cbopt_freqs         = cbopt_eigensystem.freqs
-                                    
-        cbopt_ir_spec       = cbopt_eigensystem.build_cbopt1_ir_spec()\
-                                                .build_spec(spec_grid, 
-                                                            broadening=broadening, 
-                                                            cbopt_order="cbopt1_ir")
+        cbopt_ir_spec       = cbopt_eigensystem.cbopt_ir_response().build_spec(spec_grid, broadening=broadening)
         
         return cbopt_ir_spec, cbopt_freqs
         
-    elif cbopt_order == "cbopt2_ir":
-        cbopt_eigensystem   = cboptHessian.build_cbopt2_hessian()\
-                                            .eigensystem()
+    elif cbopt_order == "cbopt_2":
+        cbopt_eigensystem   = cboptHessian.build_cbopt2_hessian().eigensystem()
         cbopt_freqs         = cbopt_eigensystem.freqs
-                                    
-        cbopt_ir_spec       = cbopt_eigensystem.build_cbopt2_ir_spec()\
-                                                .build_spec(spec_grid, 
-                                                            broadening=broadening, 
-                                                            cbopt_order="cbopt2_ir")
+        cbopt_ir_spec       = cbopt_eigensystem.cbopt_ir_response().build_spec(spec_grid, broadening=broadening)
         
         return cbopt_ir_spec, cbopt_freqs
         

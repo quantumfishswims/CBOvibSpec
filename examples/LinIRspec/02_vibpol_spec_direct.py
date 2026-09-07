@@ -14,7 +14,7 @@ Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. (2026) 28 (15): 9464-94
 import bootstrap
 import numpy as np
 import matplotlib.pyplot as plt
-from src.CBOPTvibSpec import calcCBOPTirSpec, AU_TO_CM
+from src.CBOPTvibSpec import CBOPTSpecIR, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 
@@ -41,7 +41,7 @@ broadening          = 10 # cm-1
 
 # --- CBO-PT IR Spectrum ---
 
-cbopt0_ir_spec, cbopt0_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
+cbopt0_ir_spec, cbopt0_freqs  = CBOPTSpecIR(vib_modes = mol_freqs,
                                                 cav_modes = cav_freqs,
                                                 coupling = coupling,
                                                 dip_deriv = dip_deriv,  
@@ -52,9 +52,9 @@ cbopt0_ir_spec, cbopt0_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
                                                 polar_axis = polar_axis,
                                                 spec_grid = spec_grid,
                                                 broadening = broadening,
-                                                cbopt_order = "cbopt0_ir")
+                                                cbopt_order = "cbopt_0")
 
-cbopt1_ir_spec, cbopt1_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
+cbopt1_ir_spec, cbopt1_freqs  = CBOPTSpecIR(vib_modes = mol_freqs,
                                                 cav_modes = cav_freqs,
                                                 coupling = coupling,
                                                 dip_deriv = dip_deriv,
@@ -65,9 +65,9 @@ cbopt1_ir_spec, cbopt1_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
                                                 polar_axis = polar_axis,
                                                 spec_grid = spec_grid,
                                                 broadening = broadening,
-                                                cbopt_order = "cbopt1_ir")
+                                                cbopt_order = "cbopt_1")
 
-cbopt2_ir_spec, cbopt2_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
+cbopt2_ir_spec, cbopt2_freqs  = CBOPTSpecIR(vib_modes = mol_freqs,
                                                 cav_modes = cav_freqs,
                                                 coupling = coupling,
                                                 dip_deriv = dip_deriv,
@@ -78,7 +78,7 @@ cbopt2_ir_spec, cbopt2_freqs  = calcCBOPTirSpec(vib_modes = mol_freqs,
                                                 polar_axis = polar_axis,
                                                 spec_grid = spec_grid,
                                                 broadening = broadening,
-                                                cbopt_order = "cbopt2_ir")
+                                                cbopt_order = "cbopt_2")
 
 # --- CBO-PT IR Spectra Plots ---
 
@@ -88,12 +88,16 @@ plt.plot(spec_grid, cbopt2_ir_spec[0][0], color='green', label='CBOPT(2)')
 plt.stem(mol_freqs, cbopt0_ir_spec[1], markerfmt='+', linefmt='blue', label='CBOPT(0) stick')
 plt.stem(cbopt1_freqs*au_to_cm, cbopt1_ir_spec[1], markerfmt='x', linefmt='orange', label='CBOPT(1) stick')
 plt.stem(cbopt2_freqs*au_to_cm, cbopt2_ir_spec[1][0], markerfmt='o', linefmt='green', label='CBOPT(2) stick')
-plt.legend(loc='upper left')
+plt.xlabel('Wavenumbers [cm$^{-1}$]')
+plt.ylabel('IR Intensity [a.u.]')
+plt.legend(loc='upper right')
 plt.show()
 
 plt.plot(spec_grid, cbopt2_ir_spec[0][0], label='CBOPT(2)')
 plt.plot(spec_grid, cbopt2_ir_spec[0][1], label='CBOPT(2) mol')
 plt.plot(spec_grid, cbopt2_ir_spec[0][2], label='CBOPT(2) cav')
 plt.plot(spec_grid, cbopt2_ir_spec[0][3], label='CBOPT(2) mix')
-plt.legend(loc='upper left')
+plt.xlabel('Wavenumbers [cm$^{-1}$]')
+plt.ylabel('IR Intensity [a.u.]')
+plt.legend(loc='upper right')
 plt.show()
