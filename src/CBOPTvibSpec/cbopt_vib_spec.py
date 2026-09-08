@@ -69,8 +69,8 @@ def props2polaraxis(dip_deriv, polarizability):
     stat_polarize       = buildSymMatrix(polarizability, 3)
     evals_polarize, evecs_polarize   = np.linalg.eigh(stat_polarize)
 
-    dip_derive_transfrom    = np.einsum('ij,jk->ik', dip_deriv, evecs_polarize)
-    stat_polarize_transform = np.einsum('i ,ij->ij', evals_polarize, np.eye(3))
+    dip_derive_transfrom       = np.einsum('ij,jk->ik', dip_deriv, evecs_polarize)
+    stat_polarize_transform    = np.einsum('i ,ij->ij', evals_polarize, np.eye(3))
 
     return dip_derive_transfrom, stat_polarize_transform
 
@@ -223,22 +223,56 @@ class CBOPTHessian:
         self.freqs    = None
         self.evecs    = None
 
-
     def build_cbopt0_hessian(self):
-        self.cbopt_order    = "cbopt_0"
-        vib_modes           = self.vib_modes
-        n_vib               = len(vib_modes)
-
-        self.cbopt0_hessian   = np.zeros((n_vib, n_vib), dtype=float)
-        for i_vib in range(n_vib):
-            self.cbopt0_hessian[i_vib, i_vib] = vib_modes[i_vib]**2
-        
-        self.hessian = self.cbopt0_hessian.copy()
-        
+        self.cbopt_order        = "cbopt_0"
+        self.cbopt0_component   = self._cbopt0_component()
+        self.hessian = self.cbopt0_component.copy()
         return self
 
     def build_cbopt1_hessian(self):
-        self.cbopt_order    = "cbopt_1"
+        self.cbopt_order        = "cbopt_1"
+        self.cbopt0_component   = self._cbopt0_component()
+        self.cbopt1_component   = self._cbopt1_component()
+        self.hessian = self.cbopt0_component + self.cbopt1_component
+        return self
+
+    def build_cbopt2_hessian(self):
+        self.cbopt_order        = "cbopt_2"
+        self.cbopt0_component   = self._cbopt0_component()
+        self.cbopt1_component   = self._cbopt1_component()
+        self.cbopt2_component   = self._cbopt2_component()
+        self.hessian = self.cbopt0_component + self.cbopt1_component + self.cbopt2_component
+        return self
+
+    def _cbopt0_component(self):
+        vib_modes           = self.vib_modes
+        cav_modes           = self.cav_modes
+        single_mode_approx  = self.single_mode_approx
+
+        cav_dim             = self._cav_dim(cav_modes, single_mode_approx)
+        n_total             = len(vib_modes) + cav_dim  # NOTE: cav_dim distinguishes single-/two-modes scenario directly relevant for n_total!
+        n_vib               = len(vib_modes)
+        n_cav               = len(cav_modes)
+
+        cbopt0_component   = np.zeros((n_total, n_total), dtype=float)
+        for i_vib in range(n_vib):
+            cbopt0_component[i_vib, i_vib] = vib_modes[i_vib]**2
+
+        if single_mode_approx == True:
+            # Cavity mode block for single-mode approximation
+            for i_cav in range(n_cav):
+                cbopt0_component[n_vib + i_cav, n_vib + i_cav] = cav_modes[i_cav]**2
+
+        else:
+            # Cavity mode block for two-mode approximation
+            for i_cav in range(n_cav):
+                cbopt0_component[n_vib + i_cav, n_vib + i_cav]                   = cav_modes[i_cav]**2
+                cbopt0_component[n_vib + n_cav + i_cav, n_vib + n_cav + i_cav]   = cav_modes[i_cav]**2
+        
+        return cbopt0_component
+        
+
+    def _cbopt1_component(self):
         vib_modes           = self.vib_modes
         cav_modes           = self.cav_modes
         coup                = self.coupling
@@ -252,54 +286,39 @@ class CBOPTHessian:
         n_vib          = len(vib_modes)
         n_cav          = len(cav_modes)
         
-        self.cbopt1_hessian = np.zeros((n_total, n_total), dtype=float)
-        for i_vib in range(n_vib):
-            self.cbopt1_hessian[i_vib, i_vib] = vib_modes[i_vib]**2
+        cbopt1_component = np.zeros((n_total, n_total), dtype=float)
 
         if single_mode_approx == True:
             # Dipole-self energy correction of normal-mode block 
             for i_vib in range(n_vib):
                 for j_vib in range(n_vib):
-                    self.cbopt1_hessian[i_vib, j_vib] += coup**2*cav_dim*proj_dip_deriv[i_vib]*proj_dip_deriv[j_vib]
-
-            # Cavity mode block for single-mode approximation
-            for i_cav in range(n_cav):
-                self.cbopt1_hessian[n_vib + i_cav, n_vib + i_cav] = cav_modes[i_cav]**2
+                    cbopt1_component[i_vib, j_vib] += coup**2*cav_dim*proj_dip_deriv[i_vib]*proj_dip_deriv[j_vib]
 
             # Light-matter interaction block for single-mode approximation
             for i_vib in range(n_vib):
                 for i_cav in range(n_cav):
-                    self.cbopt1_hessian[n_vib + i_cav, i_vib] = -coup*cav_modes[i_cav]*proj_dip_deriv[i_vib]
-                    self.cbopt1_hessian[i_vib, n_vib + i_cav] = self.cbopt1_hessian[n_vib + i_cav, i_vib]
+                    cbopt1_component[n_vib + i_cav, i_vib] = -coup*cav_modes[i_cav]*proj_dip_deriv[i_vib]
+                    cbopt1_component[i_vib, n_vib + i_cav] = cbopt1_component[n_vib + i_cav, i_vib]
         
         else:
             # Dipole-self energy correction of normal-mode block 
             for i_vib in range(n_vib):
                 for j_vib in range(n_vib):
-                    self.cbopt1_hessian[i_vib, j_vib] += coup**2*(0.5*cav_dim)*np.einsum('j,j', proj_dip_deriv[i_vib,:], proj_dip_deriv[j_vib,:])
+                    cbopt1_component[i_vib, j_vib] += coup**2*(0.5*cav_dim)*np.einsum('j,j', proj_dip_deriv[i_vib,:], proj_dip_deriv[j_vib,:])
             
-            # Cavity mode block for two-mode approximation
-            for i_cav in range(n_cav):
-                self.cbopt1_hessian[n_vib + i_cav, n_vib + i_cav]                   = cav_modes[i_cav]**2
-                self.cbopt1_hessian[n_vib + n_cav + i_cav, n_vib + n_cav + i_cav]   = cav_modes[i_cav]**2
             
             # Light-matter interaction block for two-mode approximation
             for i_vib in range(n_vib):
                 for i_cav in range(n_cav):
-                    self.cbopt1_hessian[i_vib, n_vib + i_cav]   = -coup*cav_modes[i_cav]*proj_dip_deriv[i_vib, 0]
-                    self.cbopt1_hessian[n_vib + i_cav, i_vib]   =  self.cbopt1_hessian[i_vib, n_vib + i_cav]
+                    cbopt1_component[i_vib, n_vib + i_cav]   = -coup*cav_modes[i_cav]*proj_dip_deriv[i_vib, 0]
+                    cbopt1_component[n_vib + i_cav, i_vib]   =  cbopt1_component[i_vib, n_vib + i_cav]
                     
-                    self.cbopt1_hessian[i_vib, n_vib + n_cav + i_cav] = -coup*cav_modes[i_cav]*proj_dip_deriv[i_vib, 1]
-                    self.cbopt1_hessian[n_vib + n_cav + i_cav, i_vib] =  self.cbopt1_hessian[i_vib, n_vib + n_cav + i_cav]
+                    cbopt1_component[i_vib, n_vib + n_cav + i_cav] = -coup*cav_modes[i_cav]*proj_dip_deriv[i_vib, 1]
+                    cbopt1_component[n_vib + n_cav + i_cav, i_vib] =  cbopt1_component[i_vib, n_vib + n_cav + i_cav]
         
-        self.hessian = self.cbopt1_hessian.copy()
+        return cbopt1_component
 
-        return self
-
-    def build_cbopt2_hessian(self):
-        self.hessian        = self.build_cbopt1_hessian().hessian 
-        self.cbopt_order    = "cbopt_2"
-
+    def _cbopt2_component(self):
         vib_modes           = self.vib_modes
         cav_modes           = self.cav_modes
         coup                = self.coupling
@@ -318,62 +337,60 @@ class CBOPTHessian:
         n_vib          = len(vib_modes)
         n_cav          = len(cav_modes)
 
-        self.cbopt2_corr = np.zeros((n_total, n_total), dtype=float)
+        cbopt2_component = np.zeros((n_total, n_total), dtype=float)
 
         if single_mode_approx == True:
             # normal-mode block
             for i_vib in range(n_vib):
                 for j_vib in range(n_vib):
-                    self.cbopt2_corr[i_vib, j_vib] = -0.25*coup**4*n_cav**2*proj_dip_deriv[i_vib]*proj_stat_polarize*proj_dip_deriv[j_vib]
+                    cbopt2_component[i_vib, j_vib] = -0.25*coup**4*n_cav**2*proj_dip_deriv[i_vib]*proj_stat_polarize*proj_dip_deriv[j_vib]
             
             # cavity mode block    
             for i_cav in range(n_cav):
-                self.cbopt2_corr[n_vib + i_cav, n_vib + i_cav] = -coup**2*cav_modes[i_cav]**2*proj_stat_polarize*n_mol
+                cbopt2_component[n_vib + i_cav, n_vib + i_cav] = -coup**2*cav_modes[i_cav]**2*proj_stat_polarize*n_mol
                 for j_cav in range(cav_dim):
                     if i_cav != j_cav:
-                        self.cbopt2_corr[n_vib + i_cav, n_vib + j_cav] = -coup**2*cav_modes[i_cav]*cav_modes[j_cav]*proj_stat_polarize*n_mol
-                        self.cbopt2_corr[n_vib + j_cav, n_vib + i_cav] =  self.cbopt2_corr[n_vib + i_cav, n_vib + j_cav]
+                        cbopt2_component[n_vib + i_cav, n_vib + j_cav] = -coup**2*cav_modes[i_cav]*cav_modes[j_cav]*proj_stat_polarize*n_mol
+                        cbopt2_component[n_vib + j_cav, n_vib + i_cav] =  cbopt2_component[n_vib + i_cav, n_vib + j_cav]
             
             # interaction block
             for i_vib in range(n_vib):
                 for i_cav in range(cav_dim):
-                    self.cbopt2_corr[n_vib + i_cav, i_vib] = 0.5*coup**3*cav_dim*cav_modes[i_cav]*proj_stat_polarize*proj_dip_deriv[i_vib]
-                    self.cbopt2_corr[i_vib, n_vib + i_cav] = self.cbopt2_corr[n_vib + i_cav, i_vib]
+                    cbopt2_component[n_vib + i_cav, i_vib] = 0.5*coup**3*cav_dim*cav_modes[i_cav]*proj_stat_polarize*proj_dip_deriv[i_vib]
+                    cbopt2_component[i_vib, n_vib + i_cav] = cbopt2_component[n_vib + i_cav, i_vib]
         
         else:
             # normal-mode block
             for i_vib in range(n_vib):
                 for j_vib in range(n_vib):
-                    self.cbopt2_corr[i_vib, j_vib] = -0.25*coup**4*n_cav**2*np.einsum('i,ij,j', proj_dip_deriv[i_vib, :], proj_stat_polarize, proj_dip_deriv[j_vib, :])
+                    cbopt2_component[i_vib, j_vib] = -0.25*coup**4*n_cav**2*np.einsum('i,ij,j', proj_dip_deriv[i_vib, :], proj_stat_polarize, proj_dip_deriv[j_vib, :])
 
             # cavity-mode block 
             for i_cav in range(n_cav):
                 # diagonal elements
-                self.cbopt2_corr[n_vib + i_cav, n_vib + i_cav]                  = -coup**2*cav_modes[i_cav]**2*proj_stat_polarize[0, 0]*n_mol
-                self.cbopt2_corr[n_vib + n_cav + i_cav, n_vib + n_cav + i_cav]  = -coup**2*cav_modes[i_cav]**2*proj_stat_polarize[1, 1]*n_mol
+                cbopt2_component[n_vib + i_cav, n_vib + i_cav]                  = -coup**2*cav_modes[i_cav]**2*proj_stat_polarize[0, 0]*n_mol
+                cbopt2_component[n_vib + n_cav + i_cav, n_vib + n_cav + i_cav]  = -coup**2*cav_modes[i_cav]**2*proj_stat_polarize[1, 1]*n_mol
 
                 for j_cav in range(n_cav):
-                    self.cbopt2_corr[n_vib + n_cav + i_cav, n_vib + j_cav] = -coup**2*cav_modes[i_cav]*cav_modes[j_cav]*proj_stat_polarize[0, 1]*n_mol
-                    self.cbopt2_corr[n_vib + j_cav, n_vib + n_cav + i_cav] =  self.cbopt2_corr[n_vib + n_cav + i_cav, n_vib + j_cav]
+                    cbopt2_component[n_vib + n_cav + i_cav, n_vib + j_cav] = -coup**2*cav_modes[i_cav]*cav_modes[j_cav]*proj_stat_polarize[0, 1]*n_mol
+                    cbopt2_component[n_vib + j_cav, n_vib + n_cav + i_cav] =  cbopt2_component[n_vib + n_cav + i_cav, n_vib + j_cav]
                     
                     if i_cav != j_cav: #different cavity modes & all polarization combinations
-                        self.cbopt2_corr[n_vib + i_cav, n_vib + j_cav] = -coup**2*cav_modes[i_cav]*cav_modes[j_cav]*proj_stat_polarize[0, 0]*n_mol
-                        self.cbopt2_corr[n_vib + j_cav, n_vib + i_cav] =  self.cbopt2_corr[n_vib + i_cav, n_vib + j_cav] 
+                        cbopt2_component[n_vib + i_cav, n_vib + j_cav] = -coup**2*cav_modes[i_cav]*cav_modes[j_cav]*proj_stat_polarize[0, 0]*n_mol
+                        cbopt2_component[n_vib + j_cav, n_vib + i_cav] =  cbopt2_component[n_vib + i_cav, n_vib + j_cav] 
 
-                        self.cbopt2_corr[n_vib + n_cav + i_cav, n_vib + n_cav + j_cav] = -coup**2*cav_modes[i_cav]*cav_modes[j_cav]*proj_stat_polarize[1, 1]*n_mol
-                        self.cbopt2_corr[n_vib + n_cav + j_cav, n_vib + n_cav + i_cav] =  self.cbopt2_corr[n_vib + n_cav + i_cav, n_vib + n_cav + j_cav]                        
+                        cbopt2_component[n_vib + n_cav + i_cav, n_vib + n_cav + j_cav] = -coup**2*cav_modes[i_cav]*cav_modes[j_cav]*proj_stat_polarize[1, 1]*n_mol
+                        cbopt2_component[n_vib + n_cav + j_cav, n_vib + n_cav + i_cav] =  cbopt2_component[n_vib + n_cav + i_cav, n_vib + n_cav + j_cav]                        
 
             for i_vib in range(n_vib):
                 for i_cav in range(n_cav):
-                    self.cbopt2_corr[n_vib + i_cav, i_vib] = 0.5*coup**3*n_cav*cav_modes[i_cav]*np.einsum('i,i', proj_stat_polarize[0, :], proj_dip_deriv[i_vib, :])
-                    self.cbopt2_corr[i_vib, n_vib + i_cav] = self.cbopt2_corr[n_vib + i_cav, i_vib]
+                    cbopt2_component[n_vib + i_cav, i_vib] = 0.5*coup**3*n_cav*cav_modes[i_cav]*np.einsum('i,i', proj_stat_polarize[0, :], proj_dip_deriv[i_vib, :])
+                    cbopt2_component[i_vib, n_vib + i_cav] = cbopt2_component[n_vib + i_cav, i_vib]
 
-                    self.cbopt2_corr[n_vib + n_cav + i_cav, i_vib] = 0.5*coup**3*n_cav*cav_modes[i_cav]*np.einsum('i,i', proj_stat_polarize[1, :], proj_dip_deriv[i_vib, :])
-                    self.cbopt2_corr[i_vib, n_vib + n_cav + i_cav] = self.cbopt2_corr[n_vib + n_cav + i_cav, i_vib]
+                    cbopt2_component[n_vib + n_cav + i_cav, i_vib] = 0.5*coup**3*n_cav*cav_modes[i_cav]*np.einsum('i,i', proj_stat_polarize[1, :], proj_dip_deriv[i_vib, :])
+                    cbopt2_component[i_vib, n_vib + n_cav + i_cav] = cbopt2_component[n_vib + n_cav + i_cav, i_vib]
 
-        self.hessian += self.cbopt2_corr
-
-        return self
+        return cbopt2_component
     
     def eigensystem(self):
         eigenvalues, eigenvectors = np.linalg.eigh(self.hessian)
