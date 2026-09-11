@@ -3,12 +3,14 @@
 Cavity Born-Oppenheimer perturbation theory (CBO-PT) linear response approach up
 to second order in the light-matter interaction potential. 
 
-Definition of CBO-PT(n) Hessians and Intensities for n = 0,1,2
+Definition of CBO-PT(n) Hessians and Intensities (IR) for n = 0,1,2
 
 Code requires frequency-weighted dipole derivatives (vibrational overlap, cf. ORCA)
 
 Lit: Fischer, Syska, Saalfrank. J. Phys. Chem. Lett. 2024, 15, 8, 2262-2269 (10.1021/acs.jpclett.4c00105)
 """
+
+import abc
 
 import numpy as np
 
@@ -48,6 +50,7 @@ def buildSymMatrix(array, n):
     symmat = symmat + np.triu(symmat, 1).T
     return symmat
 
+
 def props2polaraxis(dip_deriv, polarizability):
     """
     Transform Cartesian components of dipole derivative vector and polarizability tensor
@@ -69,8 +72,11 @@ def props2polaraxis(dip_deriv, polarizability):
     stat_polarize       = buildSymMatrix(polarizability, 3)
     evals_polarize, evecs_polarize   = np.linalg.eigh(stat_polarize)
 
+
     dip_derive_transfrom       = np.einsum('ij,jk->ik', dip_deriv, evecs_polarize)
     stat_polarize_transform    = np.einsum('i ,ij->ij', evals_polarize, np.eye(3))
+
+
 
     return dip_derive_transfrom, stat_polarize_transform
 
@@ -137,6 +143,15 @@ def lorentzian(delta, omega, omega0):
     return (1/(2*np.pi))*delta/((0.5*delta)**2+(omega-omega0)**2)
 
 class CBOPTHessian:
+    cbopt_order: str | None = None
+    _component_names: tuple[str, ...] = () 
+    _registry: dict[str, type["CBOPTHessian"]] = {}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.cbopt_order is not None:
+            CBOPTHessian._registry[cls.cbopt_order] = cls
+
     def __init__(self,
                  vib_modes,
                  cav_modes,
@@ -166,19 +181,23 @@ class CBOPTHessian:
             self.dip_deriv, self.polarizability = props2polaraxis(self.dip_deriv, self.polarizability)
 
         self._hessian            = None
-        self.cbopt0_hessian      = None
-        self.cbopt1_hessian      = None
-        self.cbopt2_corr         = None
+        self.cbopt0_component    = None
+        self.cbopt1_component    = None
+        self.cbopt2_component    = None
         self.evals               = None
         self.freqs               = None
         self.evecs               = None
-        self.cbopt_order         = None
 
         self._validate_inputs()
-        
+
+        # Concrete subclasses (CBOPTHessian0/1/2) declare _component_names and
+        # build their Hessian on construction, so build_cbopt_hessian() need not
+        # be called explicitly. The abstract base declares none and stays inert.
+        if self._component_names:
+            self.build_cbopt_hessian()
+
+    # --- validation inputs ---
     def _validate_inputs(self):
-        if self.polarization is None:
-            raise ValueError('Cavity polarization must be provided')
         if self.dip_deriv.ndim != 2 or self.dip_deriv.shape[1] != 3:
             raise ValueError('dip_deriv must be a 2D array with shape (n_modes, 3)')
         if self.dip_deriv.shape[0] != self.vib_modes.size:
@@ -211,7 +230,7 @@ class CBOPTHessian:
         cav_modes = np.asarray(cav_modes, dtype=float)
         return len(cav_modes) if single_mode_approx == True else 2*len(cav_modes)
 
-
+    # --- Hessian ---
     @property
     def hessian(self):
         return self._hessian
@@ -223,26 +242,31 @@ class CBOPTHessian:
         self.freqs    = None
         self.evecs    = None
 
-    def build_cbopt0_hessian(self):
-        self.cbopt_order        = "cbopt_0"
-        self.cbopt0_component   = self._cbopt0_component()
-        self.hessian = self.cbopt0_component.copy()
+    def build_cbopt_hessian(self):
+        """Sum the CBO-PT components declared by this subclass into ``self.hessian``."""
+        if not self._component_names:
+            raise NotImplementedError(
+                'CBOPTHessian is abstract - instantiate CBOPTHessian0/1/2 or use '
+                'CBOPTHessian.create(cbopt_order=...).'
+            )
+        components = []
+        for name in self._component_names:
+            component = getattr(self, f'_{name}_component')()
+            setattr(self, f'{name}_component', component)
+            components.append(component)
+        self.hessian = np.sum(components, axis=0)
         return self
 
-    def build_cbopt1_hessian(self):
-        self.cbopt_order        = "cbopt_1"
-        self.cbopt0_component   = self._cbopt0_component()
-        self.cbopt1_component   = self._cbopt1_component()
-        self.hessian = self.cbopt0_component + self.cbopt1_component
-        return self
+    @classmethod
+    def create(cls, *, cbopt_order, **kwargs):
+        """Instantiate the concrete subclass matching ``cbopt_order``."""
+        try:
+            target_cls = cls._registry[cbopt_order]
+        except KeyError:
+            valid = ', '.join(sorted(cls._registry))
+            raise ValueError(f'Invalid cbopt_order {cbopt_order!r}; expected one of {valid}.') from None
+        return target_cls(**kwargs)
 
-    def build_cbopt2_hessian(self):
-        self.cbopt_order        = "cbopt_2"
-        self.cbopt0_component   = self._cbopt0_component()
-        self.cbopt1_component   = self._cbopt1_component()
-        self.cbopt2_component   = self._cbopt2_component()
-        self.hessian = self.cbopt0_component + self.cbopt1_component + self.cbopt2_component
-        return self
 
     def _cbopt0_component(self):
         vib_modes           = self.vib_modes
@@ -318,6 +342,7 @@ class CBOPTHessian:
         
         return cbopt1_component
 
+
     def _cbopt2_component(self):
         vib_modes           = self.vib_modes
         cav_modes           = self.cav_modes
@@ -391,6 +416,7 @@ class CBOPTHessian:
                     cbopt2_component[i_vib, n_vib + n_cav + i_cav] = cbopt2_component[n_vib + n_cav + i_cav, i_vib]
 
         return cbopt2_component
+
     
     def eigensystem(self):
         eigenvalues, eigenvectors = np.linalg.eigh(self.hessian)
@@ -401,22 +427,63 @@ class CBOPTHessian:
         self.evecs = eigenvectors
         return self
     
+    def _spec_response(self, spec_type):
+        """Resolve the linear-response spectrum class for ``(cbopt_order, spec_type)``."""
+        try:
+            spec_cls = _CBOPTSpec._registry[(self.cbopt_order, spec_type)]
+        except KeyError:
+            available = ', '.join(f'{order}/{stype}' for order, stype in sorted(_CBOPTSpec._registry)) or 'none'
+            raise NotImplementedError(
+                f'No {spec_type!r} response for cbopt_order={self.cbopt_order!r} (available: {available}).'
+            ) from None
+        return spec_cls(self, spec_type=spec_type)
+
     def cbopt_ir_response(self):
-        return _CBOPTSpec(self, spec_type="ir")
-    
+        return self._spec_response("ir")
+
     def cbopt_raman_response(self):
-        return NotImplementedError("CBO-PT Raman response is not implemented yet.")
+        return self._spec_response("raman")
 
 
-class _CBOPTSpec:
+class CBOPTHessian0(CBOPTHessian):
+    """CBO-PT(0): bare molecular + cavity Hessian."""
+    cbopt_order      = "cbopt_0"
+    _component_names = ("cbopt0",)
+
+
+class CBOPTHessian1(CBOPTHessian):
+    """CBO-PT(1): adds the first-order dipole-self / light-matter block."""
+    cbopt_order      = "cbopt_1"
+    _component_names = ("cbopt0", "cbopt1")
+
+
+class CBOPTHessian2(CBOPTHessian):
+    """CBO-PT(2): adds the second-order polarizability correction."""
+    cbopt_order      = "cbopt_2"
+    _component_names = ("cbopt0", "cbopt1", "cbopt2")
+
+
+
+# --- Linear response spectrum classes ---
+
+class _CBOPTSpec(abc.ABC):
+    cbopt_order: str | None = None
+    spec_type: str | None = None
+    _registry: dict[tuple[str, str], type["_CBOPTSpec"]] = {}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.cbopt_order is not None and cls.spec_type is not None:
+            _CBOPTSpec._registry[(cls.cbopt_order, cls.spec_type)] = cls
+
     def __init__(self,
                  CBOPTHessian_instance: 'CBOPTHessian',
-                 spec_type: str
+                 spec_type: str | None = None
                  ):
-        
+
         self.hessian            = CBOPTHessian_instance
         self.cbopt_order        = CBOPTHessian_instance.cbopt_order
-        self.spec_type          = spec_type # "ir" or "raman    "
+        self.spec_type          = spec_type if spec_type is not None else type(self).spec_type # "ir" or "raman"
 
         self.vib_modes           = CBOPTHessian_instance.vib_modes
         self.cav_modes           = CBOPTHessian_instance.cav_modes
@@ -432,155 +499,133 @@ class _CBOPTSpec:
 
         self._intensities        = None
 
+    def _peak_positions(self):
+        """cm-1 positions of the spectral peaks (default: full eigen-spectrum)."""
+        return self.freqs * AU_TO_CM
+
+    @abc.abstractmethod
+    def _intensity_components(self) -> dict[str, np.ndarray]:
+        """Named intensity components (e.g. {"total": ...}), each a 1-D array aligned with ``_peak_positions()``."""
+
     @property
     def intensities(self):
+        if self._intensities is None:
+            self._intensities = self._intensity_components()
+        return self._intensities
 
-        if  self.spec_type == "ir" and (self.cbopt_order == "cbopt_0" or self.cbopt_order == "cbopt_1"):
-            print("Calculate molecular IR intensitites (Equivalent for CBO-PT(0) and CBO-PT(1))")
-            n_states  = self.evecs.shape[0]
+    
+    def build_spec(self, freq_grid, broadening: float):
+        """
+        Build a Lorentzian-broadened IR spectrum on a given frequency grid.
+        """
+        freq_grid  = np.asarray(freq_grid, dtype=float)
+        positions  = np.asarray(self._peak_positions(), dtype=float)
+        components = self.intensities
 
-            mol_charge          = np.zeros((n_states, 3), dtype=float)
-            mol_intensity       = np.zeros(n_states, dtype=float)
-            self._intensities   = np.zeros(n_states, dtype=float)
+        broadened      = lorentzian(broadening, freq_grid[:, None], positions[None, :])  # (n_grid, n_peaks)
+        peak_lineshape = lorentzian(broadening, positions, positions)                    # (n_peaks,)
+
+        spec_full  = {name: np.einsum('gp,p->g', broadened, inten)      for name, inten in components.items()}
+        spec_stick = {name: np.einsum('p,p->p', peak_lineshape, inten)  for name, inten in components.items()}
+        return spec_full, spec_stick
+
+    
+# --- CBO-PT(n) IR spectrum classes ---
+
+class _CBOPTSpecIR0(_CBOPTSpec):
+    cbopt_order = "cbopt_0"
+    spec_type   = "ir"
+
+    def _peak_positions(self):
+        return self.vib_modes * AU_TO_CM
+
+    def _intensity_components(self):
+        print("Calculate molecular (CBO-PT(0)) IR intensities")
+        mol_charge       = self.dip_deriv / np.sqrt(2*self.vib_modes)[:, None]
+        cbopt0_intensity = np.einsum('ik,ik->i', mol_charge, mol_charge)
+
+        return {"total": cbopt0_intensity}
+
+    
+class _CBOPTSpecIR1(_CBOPTSpec):
+    cbopt_order = "cbopt_1"
+    spec_type   = "ir"
+
+    def _intensity_components(self):
+        print("Calculate CBO-PT(1) IR intensities")
+        n_states  = self.evecs.shape[0]
+        n_vib     = len(self.vib_modes)
+
+        mol_charge          = np.zeros((n_states, 3), dtype=float)
+        cbopt1_intensity    = np.zeros(n_states, dtype=float)
+
+        for i_vibpol in range(n_states):
+            for k_axis in range(3):
+                mol_charge[i_vibpol, k_axis] = np.einsum('i,i', self.dip_deriv[:, k_axis],
+                                                         self.evecs[:n_vib, i_vibpol]/np.sqrt(2*self.vib_modes))
+
+            cbopt1_intensity[i_vibpol] = np.einsum('k,k', mol_charge[i_vibpol, :], mol_charge[i_vibpol, :])
+
+        return {"total": cbopt1_intensity}
+
+    
+class _CBOPTSpecIR2(_CBOPTSpec):
+    cbopt_order = "cbopt_2"
+    spec_type   = "ir"
+
+    def _intensity_components(self):
+        print("Calculate CBO-PT(2) IR intensities")
+        n_states = self.evecs.shape[0]
+        n_vib    = len(self.vib_modes)
+        n_cav    = len(self.cav_modes)
+
+        proj_dip_deriv         = projectDipole(self.dip_deriv, self.polarization, self.single_mode_approx)
+        semiproj_stat_polarize = projectPolarizability(self.polarizability, self.polarization, self.single_mode_approx)[1]
+
+        cbopt2_mol_charge = np.zeros((n_states, 3), dtype=float)
+        cbopt2_cav_charge = np.zeros((n_states, 3), dtype=float)
+
+        if self.single_mode_approx == True:
+            for i_vibpol in range(n_states):
+                for k_axis in range(3):
+                    _cbopt2_molfac = 0.5*self.coupling**2*n_cav*semiproj_stat_polarize[k_axis]
+                    _cbopt2_cavfac = self.coupling*self.n_mol*semiproj_stat_polarize[k_axis]
+
+                    cbopt2_mol_charge[i_vibpol, k_axis]  = np.einsum('i,i', self.dip_deriv[:, k_axis]/np.sqrt(2*self.vib_modes),
+                                                                    self.evecs[:n_vib, i_vibpol])
+                    cbopt2_mol_charge[i_vibpol, k_axis] -= _cbopt2_molfac*np.einsum('i,i', proj_dip_deriv[:]/np.sqrt(2*self.vib_modes),
+                                                                                   self.evecs[:n_vib, i_vibpol])
+                    cbopt2_cav_charge[i_vibpol, k_axis]  = _cbopt2_cavfac*np.einsum('k,k', np.sqrt(self.cav_modes/2),
+                                                                                   self.evecs[n_vib:n_vib + n_cav, i_vibpol])
+
+        else:
+            _cbopt2_molfac = 0.5*self.coupling**2*n_cav
+            _cbopt2_mol_charge_intermediate = np.einsum('ik,jk->ij', semiproj_stat_polarize, proj_dip_deriv)  # (3,2)(n_vib,2)->(3,n_vib) polarization-contraction
 
             for i_vibpol in range(n_states):
                 for k_axis in range(3):
-                    mol_charge[i_vibpol, k_axis] = np.einsum('i,i',self.dip_deriv[:, k_axis], \
-                                                                   self.evecs[:len(self.vib_modes), i_vibpol]/np.sqrt(2*self.vib_modes))
-            
-                mol_intensity[i_vibpol] = np.einsum('k,k', mol_charge[i_vibpol, :], mol_charge[i_vibpol, :])
+                    cbopt2_mol_charge[i_vibpol, k_axis]  = np.einsum('i,i', self.dip_deriv[:, k_axis]/np.sqrt(2*self.vib_modes),
+                                                                    self.evecs[:n_vib, i_vibpol])
+                    cbopt2_mol_charge[i_vibpol, k_axis] -= _cbopt2_molfac*np.einsum('i,i,i', _cbopt2_mol_charge_intermediate[k_axis, :], 1/np.sqrt(2*self.vib_modes),
+                                                                                   self.evecs[:n_vib, i_vibpol])
 
-            self._intensities = mol_intensity.copy()
-            
-    
-        elif self.spec_type == "ir" and self.cbopt_order == "cbopt_2":
-            print("Calculate CBO-PT(2) IR intensities")
-            n_states            = self.evecs.shape[0]
-            n_vib               = len(self.vib_modes)
-            n_cav               = len(self.cav_modes)
+                    cbopt2_cav_charge[i_vibpol, k_axis]  = self.coupling*semiproj_stat_polarize[k_axis, 0]*np.einsum('k,k', np.sqrt(self.cav_modes/2),
+                                                                                                                    self.evecs[n_vib:n_vib + n_cav, i_vibpol])
+                    cbopt2_cav_charge[i_vibpol, k_axis] += self.coupling*semiproj_stat_polarize[k_axis, 1]*np.einsum('k,k', np.sqrt(self.cav_modes/2),
+                                                                                                                    self.evecs[n_vib + n_cav:n_vib + 2*n_cav, i_vibpol])
 
-            proj_dip_deriv = projectDipole(self.dip_deriv, self.polarization, self.single_mode_approx)
-            semiproj_stat_polarize = projectPolarizability(self.polarizability, self.polarization, self.single_mode_approx)[1]
+        # per-state Cartesian-axis contraction -> length-n_states intensity arrays
+        cbopt2_intensity_mol =   np.einsum('ik,ik->i', cbopt2_mol_charge, cbopt2_mol_charge)
+        cbopt2_intensity_cav =   np.einsum('ik,ik->i', cbopt2_cav_charge, cbopt2_cav_charge)
+        cbopt2_intensity_mix = 2*np.einsum('ik,ik->i', cbopt2_mol_charge, cbopt2_cav_charge)
+        cbopt2_intensity_tot = cbopt2_intensity_mol + cbopt2_intensity_cav + cbopt2_intensity_mix
 
-            cbopt2_mol_charge = np.zeros((n_states, 3), dtype=float)
-            cbopt2_cav_charge = np.zeros((n_states, 3), dtype=float)
+        return {"total": cbopt2_intensity_tot,
+                "mol":   cbopt2_intensity_mol,
+                "cav":   cbopt2_intensity_cav,
+                "mix":   cbopt2_intensity_mix}
 
-            cbopt2_intensity     = np.zeros(n_states, dtype=float)
-            cbopt2_intensity_mol = np.zeros(n_states, dtype=float)
-            cbopt2_intensity_cav = np.zeros(n_states, dtype=float)
-            cbopt2_intensity_mix = np.zeros(n_states, dtype=float)
 
-            if self.single_mode_approx == True:
-                _cbopt2_molfac  = np.zeros(3, dtype=float)
-                _cbopt2_cavfac  = np.zeros(3, dtype=float)
-                
-                for i_vibpol in range(n_states):
-                    for k_axis in range(3):
-                        _cbopt2_molfac[k_axis]  = 0.5*self.coupling**2*n_cav*semiproj_stat_polarize[k_axis]
-                        _cbopt2_cavfac[k_axis]  = self.coupling*self.n_mol*semiproj_stat_polarize[k_axis]
-                        cbopt2_mol_charge[i_vibpol, k_axis]  = np.einsum('i,i', self.dip_deriv[:, k_axis]/np.sqrt(2*self.vib_modes) , \
-                                                                                self.evecs[:n_vib, i_vibpol])    
-                        cbopt2_mol_charge[i_vibpol, k_axis] -= _cbopt2_molfac[k_axis]*np.einsum('i,i', proj_dip_deriv[:]/np.sqrt(2*self.vib_modes) , \
-                                                                                                self.evecs[:n_vib, i_vibpol])            
-                        cbopt2_cav_charge[i_vibpol, k_axis]  = _cbopt2_cavfac[k_axis]*np.einsum('k,k', np.sqrt(self.cav_modes/2) , \
-                                                                                                self.evecs[n_vib:n_vib + n_cav, i_vibpol])
-                    
-            else:
-                _cbopt2_molfac  = 0.5*self.coupling**2*n_cav
-                _cbopt2_mol_charge_intermediate = np.einsum('ik,jk->ij', semiproj_stat_polarize, proj_dip_deriv) # (3,2)(n_vib,2)->(3,n_vib) array/ polarization-contraction 
-
-                for i_vibpol in range(n_states):
-                    for k_axis in range(3):
-                        cbopt2_mol_charge[i_vibpol, k_axis]  = np.einsum('i,i', self.dip_deriv[:, k_axis]/np.sqrt(2*self.vib_modes) , \
-                                                                                self.evecs[:n_vib, i_vibpol])
-                        cbopt2_mol_charge[i_vibpol, k_axis] -= _cbopt2_molfac*np.einsum('i,i,i', _cbopt2_mol_charge_intermediate[k_axis,:], 1/np.sqrt(2*self.vib_modes) , \
-                                                                                                self.evecs[:n_vib, i_vibpol]) 
-                
-                        cbopt2_cav_charge[i_vibpol, k_axis]  = self.coupling*semiproj_stat_polarize[k_axis, 0]*np.einsum('k,k', np.sqrt(self.cav_modes/2), \
-                                                                                                                                self.evecs[n_vib:n_vib + n_cav, i_vibpol])
-                        cbopt2_cav_charge[i_vibpol, k_axis] += self.coupling*semiproj_stat_polarize[k_axis, 1]*np.einsum('k,k', np.sqrt(self.cav_modes/2), \
-                                                                                                                                self.evecs[n_vib + n_cav:n_vib + 2*n_cav, i_vibpol])
-
-            for i_vibpol in range(n_states):
-                cbopt2_intensity_mol[i_vibpol] =   np.einsum('k,k', cbopt2_mol_charge[i_vibpol, :], cbopt2_mol_charge[i_vibpol, :]) # Cartesian axis contraction 
-                cbopt2_intensity_cav[i_vibpol] =   np.einsum('k,k', cbopt2_cav_charge[i_vibpol, :], cbopt2_cav_charge[i_vibpol, :])
-                cbopt2_intensity_mix[i_vibpol] = 2*np.einsum('k,k', cbopt2_mol_charge[i_vibpol, :], cbopt2_cav_charge[i_vibpol, :])
-
-            cbopt2_intensity = cbopt2_intensity_mol + cbopt2_intensity_cav + cbopt2_intensity_mix 
-                
-            self._intensities = (cbopt2_intensity.copy(),
-                                 cbopt2_intensity_mol.copy(),
-                                 cbopt2_intensity_cav.copy(),
-                                 cbopt2_intensity_mix.copy())
-            
-        return self._intensities
-    
-    
-    def build_spec(self, 
-                   freq_grid, 
-                   broadening: float):
-
-        freqs       = self.freqs
-        vib_modes   = self.vib_modes
-        intensity   = self.intensities
-
-        if self.cbopt_order == "cbopt_0":
-
-            spec_full  = np.zeros(len(freq_grid), dtype=float)
-            spec_stick = np.zeros(len(vib_modes), dtype=float)
-
-            for i_spec in range(len(freq_grid)):
-                for i_vib in range(len(vib_modes)):
-                    spec_full[i_spec] += intensity[i_vib]*lorentzian(broadening, 
-                                                                    freq_grid[i_spec], 
-                                                                    vib_modes[i_vib]*AU_TO_CM)
-            for i_vib in range(len(vib_modes)):
-                spec_stick[i_vib] = intensity[i_vib]*lorentzian(broadening, 
-                                                                vib_modes[i_vib]*AU_TO_CM, 
-                                                                vib_modes[i_vib]*AU_TO_CM)
-                
-            return (spec_full, spec_stick)
-
-        elif self.cbopt_order == "cbopt_1":
-
-            spec_full  = np.zeros(len(freq_grid), dtype=float)
-            spec_stick = np.zeros(len(freqs), dtype=float)
-        
-            for i_spec in range(len(freq_grid)):
-                for i_vibpol in range(len(freqs)):
-                    spec_full[i_spec] += intensity[i_vibpol]*lorentzian(broadening, 
-                                                                         freq_grid[i_spec], 
-                                                                         freqs[i_vibpol]*AU_TO_CM)
-            spec_stick = np.zeros(len(freqs), dtype=float)
-            for i_vibpol in range(len(freqs)):
-                spec_stick[i_vibpol] = intensity[i_vibpol]*lorentzian(broadening, 
-                                                                    freqs[i_vibpol]*AU_TO_CM, 
-                                                                    freqs[i_vibpol]*AU_TO_CM)
-                
-            return (spec_full, spec_stick)
-
-        elif self.cbopt_order == "cbopt_2":
-
-            spec_full  = np.zeros((4,len(freq_grid)), dtype=float)
-
-            for i_component in range(4):
-                for i_spec in range(len(freq_grid)):
-                    for i_vibpol in range(len(freqs)):
-                        spec_full[i_component, i_spec] += intensity[i_component][i_vibpol]*lorentzian(broadening, 
-                                                                                                    freq_grid[i_spec], 
-                                                                                                    freqs[i_vibpol]*AU_TO_CM)
-                    
-            spec_stick = np.zeros((4, len(freqs)), dtype=float)   
-            for i_component in range(4): 
-                for i_vibpol in range(len(freqs)):
-                    spec_stick[i_component, i_vibpol] = intensity[i_component][i_vibpol]*lorentzian(broadening, 
-                                                                            freqs[i_vibpol]*AU_TO_CM, 
-                                                                            freqs[i_vibpol]*AU_TO_CM)
-
-            return (spec_full, spec_stick)
-        
-        else:
-            raise ValueError(f"Invalid cbopt_order: {self.cbopt_order}. Only 'cbopt_n' for n = 0,1,2 implemented.")
 
         
 

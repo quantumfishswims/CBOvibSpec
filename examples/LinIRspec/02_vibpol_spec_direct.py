@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Linear vibropolaritonic IR spectra from CBO-PT(n) linear response with n=0,1,2 
+Linear vibropolaritonic IR spectra from CBO-PT(n) linear response with n=0,1,2
 
 3+1 mode example for experimentally relevant Si-C-stretch/CH3-rocking band
 of 1-phenyl-2-trimethylsilylacetylene (PTA) around 860 cm-1.
@@ -31,7 +31,6 @@ polarization = np.array([[0, 0, 1], [0, 1, 0]])
 single_mode_approximation = True
 polar_axis = True
 
-
 # --- Spectroscopy Parameters ---
 
 freq_min, freq_max  = 700, 1000
@@ -39,64 +38,48 @@ nfreq               = 5000
 spec_grid           = np.linspace(freq_min, freq_max, nfreq)
 broadening          = 10 # cm-1
 
+cbopt_params = dict(vib_modes          = mol_freqs,
+                    cav_modes          = cav_freqs,
+                    coupling           = coupling,
+                    dip_deriv          = dip_deriv,
+                    polarizability     = stat_polar,
+                    polarization       = polarization,
+                    n_mol              = nmol,
+                    single_mode_approx = single_mode_approximation,
+                    polar_axis         = polar_axis,
+                    spec_grid          = spec_grid,
+                    broadening         = broadening)
+
 # --- CBO-PT IR Spectrum ---
 
-cbopt0_ir_spec, cbopt0_freqs  = CBOPTSpecIR(vib_modes = mol_freqs,
-                                                cav_modes = cav_freqs,
-                                                coupling = coupling,
-                                                dip_deriv = dip_deriv,  
-                                                polarizability = stat_polar,
-                                                polarization = polarization,
-                                                n_mol = nmol,
-                                                single_mode_approx = single_mode_approximation,
-                                                polar_axis = polar_axis,
-                                                spec_grid = spec_grid,
-                                                broadening = broadening,
-                                                cbopt_order = "cbopt_0")
-
-cbopt1_ir_spec, cbopt1_freqs  = CBOPTSpecIR(vib_modes = mol_freqs,
-                                                cav_modes = cav_freqs,
-                                                coupling = coupling,
-                                                dip_deriv = dip_deriv,
-                                                polarizability = stat_polar,
-                                                polarization = polarization,
-                                                n_mol = nmol,
-                                                single_mode_approx = single_mode_approximation,
-                                                polar_axis = polar_axis,
-                                                spec_grid = spec_grid,
-                                                broadening = broadening,
-                                                cbopt_order = "cbopt_1")
-
-cbopt2_ir_spec, cbopt2_freqs  = CBOPTSpecIR(vib_modes = mol_freqs,
-                                                cav_modes = cav_freqs,
-                                                coupling = coupling,
-                                                dip_deriv = dip_deriv,
-                                                polarizability = stat_polar,
-                                                polarization = polarization,
-                                                n_mol = nmol,
-                                                single_mode_approx = single_mode_approximation,
-                                                polar_axis = polar_axis,
-                                                spec_grid = spec_grid,
-                                                broadening = broadening,
-                                                cbopt_order = "cbopt_2")
+cbopt0_ir_spec, cbopt0_freqs = CBOPTSpecIR(**cbopt_params, cbopt_order="cbopt_0")
+cbopt1_ir_spec, cbopt1_freqs = CBOPTSpecIR(**cbopt_params, cbopt_order="cbopt_1")
+cbopt2_ir_spec, cbopt2_freqs = CBOPTSpecIR(**cbopt_params, cbopt_order="cbopt_2")
 
 # --- CBO-PT IR Spectra Plots ---
+#
+# CBOPTSpecIR returns (spec_full, spec_stick), each a dict keyed by component:
+#   CBO-PT(0)/(1): {"total"}
+#   CBO-PT(2):     {"total", "mol", "cav", "mix"}
 
-plt.plot(spec_grid, cbopt0_ir_spec[0], color='blue', label='CBOPT(0)')
-plt.plot(spec_grid, cbopt1_ir_spec[0], color='orange', label='CBOPT(1)')
-plt.plot(spec_grid, cbopt2_ir_spec[0][0], color='green', label='CBOPT(2)')
-plt.stem(mol_freqs, cbopt0_ir_spec[1], markerfmt='+', linefmt='blue', label='CBOPT(0) stick')
-plt.stem(cbopt1_freqs*au_to_cm, cbopt1_ir_spec[1], markerfmt='x', linefmt='orange', label='CBOPT(1) stick')
-plt.stem(cbopt2_freqs*au_to_cm, cbopt2_ir_spec[1][0], markerfmt='o', linefmt='green', label='CBOPT(2) stick')
+cbopt0_full, cbopt0_stick = cbopt0_ir_spec
+cbopt1_full, cbopt1_stick = cbopt1_ir_spec
+cbopt2_full, cbopt2_stick = cbopt2_ir_spec
+
+plt.plot(spec_grid, cbopt0_full["total"], color='blue', label='CBOPT(0)')
+plt.plot(spec_grid, cbopt1_full["total"], color='orange', label='CBOPT(1)')
+plt.plot(spec_grid, cbopt2_full["total"], color='green', label='CBOPT(2)')
+plt.stem(mol_freqs, cbopt0_stick["total"], markerfmt='+', linefmt='blue', label='CBOPT(0) stick')
+plt.stem(cbopt1_freqs*au_to_cm, cbopt1_stick["total"], markerfmt='x', linefmt='orange', label='CBOPT(1) stick')
+plt.stem(cbopt2_freqs*au_to_cm, cbopt2_stick["total"], markerfmt='o', linefmt='green', label='CBOPT(2) stick')
 plt.xlabel('Wavenumbers [cm$^{-1}$]')
 plt.ylabel('IR Intensity [a.u.]')
 plt.legend(loc='upper right')
 plt.show()
 
-plt.plot(spec_grid, cbopt2_ir_spec[0][0], label='CBOPT(2)')
-plt.plot(spec_grid, cbopt2_ir_spec[0][1], label='CBOPT(2) mol')
-plt.plot(spec_grid, cbopt2_ir_spec[0][2], label='CBOPT(2) cav')
-plt.plot(spec_grid, cbopt2_ir_spec[0][3], label='CBOPT(2) mix')
+for component, spec in cbopt2_full.items():
+    label = 'CBOPT(2)' if component == 'total' else f'CBOPT(2) {component}'
+    plt.plot(spec_grid, spec, label=label)
 plt.xlabel('Wavenumbers [cm$^{-1}$]')
 plt.ylabel('IR Intensity [a.u.]')
 plt.legend(loc='upper right')
