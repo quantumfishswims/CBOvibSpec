@@ -18,8 +18,8 @@ from src.CBOPTvibSpec import CBOPTSpecIR, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 
-mol_freqs       = np.loadtxt('model_data/mol_freqs_pta.dat', dtype=float)
-dip_deriv       = np.loadtxt('model_data/dip_deriv_pta.dat', dtype=float)
+mol_freqs       = np.loadtxt('model_data/mol_freqs_pta_3mode.dat', dtype=float)
+dip_deriv       = np.loadtxt('model_data/dip_deriv_pta_3mode.dat', dtype=float)
 stat_polar      = np.loadtxt('model_data/stat_polar_pta.dat', dtype=float)
 
 # --- System Parameters ---

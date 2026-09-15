@@ -3,11 +3,17 @@
 Cavity Born-Oppenheimer perturbation theory (CBO-PT) linear response approach up
 to second order in the light-matter interaction potential. 
 
-Definition of CBO-PT(n) Hessians and Intensities (IR) for n = 0,1,2
+Definition of CBO-PT(n) Hessians and Intensities (IR, Raman) for n = 0,1,2
 
-Code requires frequency-weighted dipole derivatives (vibrational overlap, cf. ORCA)
+Code requires ab initio data:
+1) normal-mode frequencies
+2) frequency-weighted dipole derivatives (vibrational overlap, cf. ORCA)
+3) dipole polarizability tensor 
+4) dipole polarizability derivatives (for Raman spectroscopy)
+5) dipole hyperpolarizability 
 
-Lit: Fischer, Syska, Saalfrank. J. Phys. Chem. Lett. 2024, 15, 8, 2262-2269 (10.1021/acs.jpclett.4c00105)
+Lit: 
+Fischer, Syska, Saalfrank. J. Phys. Chem. Lett. 2024, 15, 8, 2262-2269 (10.1021/acs.jpclett.4c00105)
 """
 
 import abc
@@ -67,18 +73,52 @@ def props2polaraxis(dip_deriv, polarizability):
         Transformed dipole derivatives of shape (n_modes, 3).
     polarizability_transformed : array_like
         Transformed polarizability tensor of shape (3, 3).
+    rotation : ndarray
+        Orthogonal (3, 3) rotation to the polarizability principal-axis frame,
+        for co-rotating other Cartesian tensors (e.g. alpha_deriv) consistently.
     """
-    
+
     stat_polarize       = buildSymMatrix(polarizability, 3)
     evals_polarize, evecs_polarize   = np.linalg.eigh(stat_polarize)
-
 
     dip_derive_transfrom       = np.einsum('ij,jk->ik', dip_deriv, evecs_polarize)
     stat_polarize_transform    = np.einsum('i ,ij->ij', evals_polarize, np.eye(3))
 
+    return dip_derive_transfrom, stat_polarize_transform, evecs_polarize
 
 
-    return dip_derive_transfrom, stat_polarize_transform
+def alphaderiv2polaraxis(alpha_deriv, rotation):
+    """
+    Transform Cartesian components of polarizability-derivative tensors into the
+    polarizability principal-axis frame. Similar to props2polaraxis but for polarizability 
+    derivatives (alpha_deriv) instead of static polarizability (polarizability).
+    
+    NOTE: Individual function as alpha_deriv is only relevant for Raman spectroscopy
+    and not for Hessian or IR Spectroscopy (cf. _CBOPTSpecRaman class). 
+    
+    Parameters
+    ----------
+    alpha_deriv : array_like
+        Per-mode polarizability derivatives, flattened upper-triangular, shape (n_modes, 6).
+    rotation : array_like
+        Orthogonal (3, 3) rotation, as returned by props2polaraxis.
+    Returns
+    -------
+    alpha_deriv_transformed : ndarray
+        Co-rotated polarizability derivatives, flattened upper-triangular, shape (n_modes, 6).
+    """
+    alpha_deriv = np.asarray(alpha_deriv, dtype=float)
+    rotation    = np.asarray(rotation, dtype=float)
+    n_modes     = alpha_deriv.shape[0]
+    iu          = np.triu_indices(3)
+
+    alpha_deriv_transformed = np.zeros((n_modes, 6), dtype=float)
+    for i_vib in range(n_modes):
+        alpha_deriv_mode           = buildSymMatrix(alpha_deriv[i_vib], 3)
+        alpha_deriv_mode_transform = np.einsum('ik,ij,jl->kl', rotation, alpha_deriv_mode, rotation, optimize=True)
+        alpha_deriv_transformed[i_vib] = alpha_deriv_mode_transform[iu]
+
+    return alpha_deriv_transformed
 
 
 def projectDipole(dip_deriv, polarization, single_mode_approx):
@@ -95,7 +135,7 @@ def projectDipole(dip_deriv, polarization, single_mode_approx):
     Returns
     -------
     projectdip : array_like
-        Projected dipole derivatives of shape (n_modes).
+        Projected dipole derivatives of shape (n_modes, n).
     """
     dip_deriv = np.asarray(dip_deriv, dtype=float)
     polarization = np.asarray(polarization, dtype=float)
@@ -173,12 +213,13 @@ class CBOPTHessian:
         self.n_mol              = float(n_mol) 
         self.single_mode_approx = bool(single_mode_approx)
         self.polar_axis         = bool(polar_axis)
+        self._polar_axis_rotation = None
 
         if single_mode_approx == True:
             self.polarization   = np.asarray(polarization[0,:], dtype=float)
 
         if polar_axis == True:
-            self.dip_deriv, self.polarizability = props2polaraxis(self.dip_deriv, self.polarizability)
+            self.dip_deriv, self.polarizability, self._polar_axis_rotation = props2polaraxis(self.dip_deriv, self.polarizability)
 
         self._hessian            = None
         self.cbopt0_component    = None
@@ -427,7 +468,7 @@ class CBOPTHessian:
         self.evecs = eigenvectors
         return self
     
-    def _spec_response(self, spec_type):
+    def _spec_response(self, spec_type, **kwargs):
         """Resolve the linear-response spectrum class for ``(cbopt_order, spec_type)``."""
         try:
             spec_cls = _CBOPTSpec._registry[(self.cbopt_order, spec_type)]
@@ -436,13 +477,13 @@ class CBOPTHessian:
             raise NotImplementedError(
                 f'No {spec_type!r} response for cbopt_order={self.cbopt_order!r} (available: {available}).'
             ) from None
-        return spec_cls(self, spec_type=spec_type)
+        return spec_cls(self, spec_type=spec_type, **kwargs)
 
     def cbopt_ir_response(self):
         return self._spec_response("ir")
 
-    def cbopt_raman_response(self):
-        return self._spec_response("raman")
+    def cbopt_raman_response(self, **kwargs):
+        return self._spec_response("raman", **kwargs)
 
 
 class CBOPTHessian0(CBOPTHessian):
@@ -626,8 +667,166 @@ class _CBOPTSpecIR2(_CBOPTSpec):
                 "mix":   cbopt2_intensity_mix}
 
 
+# --- CBO-PT(n) Raman spectrum classes ---
 
+class _CBOPTSpecRaman(_CBOPTSpec):
+    def __init__(self,
+                 CBOPTHessian_instance: 'CBOPTHessian',
+                 alpha_deriv,
+                 spec_type: str | None = None
+                 ):
+        super().__init__(CBOPTHessian_instance, spec_type=spec_type)
+
+        alpha_deriv = np.asarray(alpha_deriv, dtype=float)
+        if alpha_deriv.shape[0] != self.vib_modes.size:
+            # Check for corrupted ab-initio input
+            raise ValueError('alpha_deriv length must match vib_modes length')
+
+        if CBOPTHessian_instance.polar_axis == True:
+            alpha_deriv = alphaderiv2polaraxis(alpha_deriv, CBOPTHessian_instance._polar_axis_rotation)
+
+        self.alpha_deriv = alpha_deriv
+
+
+class _CBOPTSpecRaman0(_CBOPTSpecRaman):
+    cbopt_order = "cbopt_0"
+    spec_type   = "raman"
+
+    def _peak_positions(self):
+        return self.vib_modes * AU_TO_CM
+
+    def _intensity_components(self):
+        print("Calculate molecular (CBO-PT(0)) Raman intensities")
+        n_vib = len(self.vib_modes)
+
+        # define squared isotropy and anisotropy 
+        isotropy_2   = np.zeros(n_vib, dtype=float)
+        anisotropy_2 = np.zeros(n_vib, dtype=float)
+
+        for i_vib in range(n_vib):
+            alpha_deriv_mode    = buildSymMatrix(self.alpha_deriv[i_vib], 3)
+            isotropy_2[i_vib]   = (np.trace(alpha_deriv_mode)/3)**2
+            anisotropy_2[i_vib] = (0.5*((alpha_deriv_mode[0, 0] - alpha_deriv_mode[1, 1])**2
+                                        + (alpha_deriv_mode[1, 1] - alpha_deriv_mode[2, 2])**2
+                                        + (alpha_deriv_mode[2, 2] - alpha_deriv_mode[0, 0])**2)
+                                  + 3*(alpha_deriv_mode[0, 1]**2 + alpha_deriv_mode[1, 2]**2 + alpha_deriv_mode[2, 0]**2))
+
+        cbopt0_raman_activity = 45*isotropy_2 + 7*anisotropy_2
+
+        return {"total": cbopt0_raman_activity}
+
+
+class _CBOPTSpecRaman1(_CBOPTSpecRaman):
+    cbopt_order = "cbopt_1"
+    spec_type   = "raman"
+
+    def _intensity_components(self):
+        print("Calculate CBO-PT(1) Raman intensities")
+        n_states  = self.evecs.shape[0]
+        n_vib     = len(self.vib_modes)
+
+        # define squared isotropy and anisotropy 
+        isotropy_2   = np.zeros(n_states, dtype=float)
+        anisotropy_2 = np.zeros(n_states, dtype=float)
+
+        # Contract alpha_deriv with evecs to get molecular charge in the polariton basis
+        alpha_mol_charge = np.einsum('ik,im->mk', self.alpha_deriv, self.evecs[:n_vib, :])  # (n_vib,3)(n_vib,n_states)->(n_states,3) contraction
+
+        for i_vibpol in range(n_states):
+            alpha_deriv_mode  = buildSymMatrix(alpha_mol_charge[i_vibpol], 3)
+            isotropy_2[i_vibpol]   = (np.trace(alpha_deriv_mode)/3)**2
+            anisotropy_2[i_vibpol] = (0.5*((alpha_deriv_mode[0, 0] - alpha_deriv_mode[1, 1])**2
+                                          + (alpha_deriv_mode[1, 1] - alpha_deriv_mode[2, 2])**2
+                                          + (alpha_deriv_mode[2, 2] - alpha_deriv_mode[0, 0])**2)
+                                    + 3*(alpha_deriv_mode[0, 1]**2 + alpha_deriv_mode[1, 2]**2 + alpha_deriv_mode[2, 0]**2))
+
+        cbopt1_raman_activity = 45*isotropy_2 + 7*anisotropy_2
+
+        return {"total": cbopt1_raman_activity}
         
+
+class _CBOPTSpecRaman2(_CBOPTSpecRaman):
+    cbopt_order = "cbopt_2"
+    spec_type   = "raman"  
+
+    def __init__(self,
+                 CBOPTHessian_instance: 'CBOPTHessian',
+                 alpha_deriv,
+                 hyperpolarize,
+                 spec_type: str | None = None
+                 ):
+        super().__init__(CBOPTHessian_instance, alpha_deriv, spec_type=spec_type)
+
+        # dipole hyperpolarizability (27,1) => (3,3,3); polarizability principal axis frame
+        hyperpolarize   = np.asarray(hyperpolarize, dtype=float).reshape(3,3,3)
+        if CBOPTHessian_instance.polar_axis == True:
+            polar_axis_rot = CBOPTHessian_instance._polar_axis_rotation
+            hyperpolarize = np.einsum('ijk,il,jm,kn->lmn', hyperpolarize, polar_axis_rot, polar_axis_rot, polar_axis_rot)
+
+        self.hyperpolarize = hyperpolarize
+
+    def _intensity_components(self):
+        print("Calculate CBO-PT(2) Raman intensities")
+        n_states  = self.evecs.shape[0]
+        n_vib     = len(self.vib_modes)
+
+        proj_dip_deriv  = projectDipole(self.dip_deriv, self.polarization, self.single_mode_approx)
+        if self.single_mode_approx == True:
+            semi_projected_hyperpolarize = np.einsum('ijk,k->ij', self.hyperpolarize, self.polarization) # (3,3,3) (3) -> (3,3)
+        else:
+            semi_projected_hyperpolarize = np.einsum('ijl,kl->ijk', self.hyperpolarize, self.polarization, optimize=True)  # (3,3,3) (2,3) -> (3,3,2)
+
+        isotropy_mol_2   = np.zeros(n_states, dtype=float)
+        anisotropy_mol_2 = np.zeros(n_states, dtype=float)
+        isotropy_cav_2   = np.zeros(n_states, dtype=float)
+        anisotropy_cav_2 = np.zeros(n_states, dtype=float)
+        isotropy_mix_2   = np.zeros(n_states, dtype=float)
+        anisotropy_mix_2 = np.zeros(n_states, dtype=float)
+
+        alpha_mol_charge = np.einsum('ik,im->mk', self.alpha_deriv, self.evecs[:n_vib, :])  # (n_vib,3)(n_vib,n_states)->(n_states,3) contraction
+
+        for i_vibpol in range(n_states):
+            alpha_deriv_mode  = buildSymMatrix(alpha_mol_charge[i_vibpol], 3)
+            if self.single_mode_approx == True:
+                alpha_deriv_mode -= 0.5*self.coupling**2*np.einsum('ij,l,l->ij', semi_projected_hyperpolarize, proj_dip_deriv, self.evecs[:n_vib, i_vibpol], optimize=True)  # (3,3,n)(n_vib, n)(n_vib)->(3,3) contraction
+            else:
+               alpha_deriv_mode  -= 0.5*self.coupling**2*np.einsum('ijk,lk,l->ij', semi_projected_hyperpolarize, proj_dip_deriv, self.evecs[:n_vib, i_vibpol], optimize=True)  # (3,3,n)(n_vib, n)(n_vib)->(3,3) contraction
+
+            if self.single_mode_approx == True:
+                alpha_deriv_cav  = self.coupling*np.einsum('i,jk,i->jk', self.cav_modes, semi_projected_hyperpolarize, self.evecs[n_vib:, i_vibpol], optimize=True)  # (n_cav)(3,3,1)(n_cav,1)->(3,3,1) contraction
+            else:
+                alpha_deriv_cav  = self.coupling*np.einsum('i,jk,i->jk', self.cav_modes, semi_projected_hyperpolarize[:,:,0], self.evecs[n_vib:n_vib + len(self.cav_modes), i_vibpol], optimize=True)  # (n_cav)(3,3,1)(n_cav,1)->(3,3,1) contraction
+                alpha_deriv_cav += self.coupling*np.einsum('i,jk,i->jk', self.cav_modes, semi_projected_hyperpolarize[:,:,1], self.evecs[n_vib + len(self.cav_modes):, i_vibpol], optimize=True)  # (n_cav)(3,3,1)(n_cav,1)->(3,3,1) contraction
+
+            isotropy_mol_2[i_vibpol]   = (np.trace(alpha_deriv_mode)/3)**2
+            anisotropy_mol_2[i_vibpol] = (0.5*((alpha_deriv_mode[0, 0] - alpha_deriv_mode[1, 1])**2
+                                          + (alpha_deriv_mode[1, 1] - alpha_deriv_mode[2, 2])**2
+                                          + (alpha_deriv_mode[2, 2] - alpha_deriv_mode[0, 0])**2)
+                                    + 3*(alpha_deriv_mode[0, 1]**2 + alpha_deriv_mode[1, 2]**2 + alpha_deriv_mode[2, 0]**2))
+
+            isotropy_cav_2[i_vibpol]   = (np.trace(alpha_deriv_cav)/3)**2
+            anisotropy_cav_2[i_vibpol] = (0.5*((alpha_deriv_cav[0, 0] - alpha_deriv_cav[1, 1])**2
+                                          + (alpha_deriv_cav[1, 1] - alpha_deriv_cav[2, 2])**2
+                                          + (alpha_deriv_cav[2, 2] - alpha_deriv_cav[0, 0])**2)
+                                    + 3*(alpha_deriv_cav[0, 1]**2 + alpha_deriv_cav[1, 2]**2 + alpha_deriv_cav[2, 0]**2))
+
+            isotropy_mix_2[i_vibpol]   = 2*(np.trace(alpha_deriv_mode)/3)*(np.trace(alpha_deriv_cav)/3)
+            anisotropy_mix_2[i_vibpol] = ((alpha_deriv_mode[0, 0] - alpha_deriv_mode[1, 1])*(alpha_deriv_cav[0, 0] - alpha_deriv_cav[1, 1])
+                                          + (alpha_deriv_mode[1, 1] - alpha_deriv_mode[2, 2])*(alpha_deriv_cav[1, 1] - alpha_deriv_cav[2, 2])
+                                          + (alpha_deriv_mode[2, 2] - alpha_deriv_mode[0, 0])*(alpha_deriv_cav[2, 2] - alpha_deriv_cav[0, 0])
+                                    + 6*(alpha_deriv_mode[0, 1]*alpha_deriv_cav[0, 1] + alpha_deriv_mode[1, 2]*alpha_deriv_cav[1, 2] + alpha_deriv_mode[2, 0]*alpha_deriv_cav[2, 0]))
+
+        cbopt2_raman_activity_mol = 45*isotropy_mol_2 + 7*anisotropy_mol_2
+        cbopt2_raman_activity_cav = 45*isotropy_cav_2 + 7*anisotropy_cav_2
+        cbopt2_raman_activity_mix = 45*isotropy_mix_2 + 7*anisotropy_mix_2
+        cbopt2_raman_activity_tot = cbopt2_raman_activity_mol + cbopt2_raman_activity_cav + cbopt2_raman_activity_mix
+
+        return {"total": cbopt2_raman_activity_tot,
+                "mol":   cbopt2_raman_activity_mol,
+                "cav":   cbopt2_raman_activity_cav,
+                "mix":   cbopt2_raman_activity_mix}
+
+
 
 
 

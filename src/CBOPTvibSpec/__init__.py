@@ -9,7 +9,7 @@ from src.CBOPTvibSpec.cbopt_vib_spec import (
     AU_TO_CM,
 )
 
-from src.CBOPTvibSpec.calc_cbopt_spec import CBOPTSpecIR
+from src.CBOPTvibSpec.calc_cbopt_spec import CBOPTSpecIR, CBOPTSpecRaman
 
 __all__ = [
     "CBOPTHessian",
@@ -19,4 +19,5 @@ __all__ = [
     "_CBOPTSpec",
     "AU_TO_CM",
     "CBOPTSpecIR",
+    "CBOPTSpecRaman",
 ]
