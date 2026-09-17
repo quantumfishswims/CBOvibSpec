@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from cboptvibspec import CBOPTHessian0, CBOPTHessian1
-from cboptvibspec.cbopt_vib_spec import AU_TO_CM, alphaderiv2polaraxis, lorentzian
+from CBOPTvibSpec import CBOPTHessian0, CBOPTHessian1
+from CBOPTvibSpec.cbopt_vib_spec import AU_TO_CM, alphaderiv2polaraxis, lorentzian
 
 
 @pytest.fixture

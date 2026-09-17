@@ -14,7 +14,7 @@ Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. (2026) 28 (15): 9464-94
 
 import numpy as np
 import matplotlib.pyplot as plt
-from cboptvibspec import CBOPTHessian1, CBOPTHessian2, AU_TO_CM
+from CBOPTvibSpec import CBOPTHessian1, CBOPTHessian2, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 

@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from cboptvibspec import CBOPTHessian, CBOPTSpecIR, CBOPTSpecRaman
+from CBOPTvibSpec import CBOPTHessian, CBOPTSpecIR, CBOPTSpecRaman
 
 COMMON_KWARGS = dict(
     vib_modes=np.array([861.6, 874.1]),

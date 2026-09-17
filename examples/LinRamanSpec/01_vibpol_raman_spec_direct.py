@@ -11,7 +11,7 @@ Direct evaluation of linear Raman spectra and frequencies for CBO-PT(n), n=0,1,2
 
 import numpy as np
 import matplotlib.pyplot as plt
-from cboptvibspec import CBOPTSpecRaman, AU_TO_CM
+from CBOPTvibSpec import CBOPTSpecRaman, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 

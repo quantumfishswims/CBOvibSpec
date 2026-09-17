@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from cboptvibspec import CBOPTHessian, CBOPTHessian0, CBOPTHessian1, CBOPTHessian2
-from cboptvibspec.cbopt_vib_spec import (
+from CBOPTvibSpec import CBOPTHessian, CBOPTHessian0, CBOPTHessian1, CBOPTHessian2
+from CBOPTvibSpec.cbopt_vib_spec import (
     AU_TO_CM,
     build_sym_matrix,
     props2polaraxis,

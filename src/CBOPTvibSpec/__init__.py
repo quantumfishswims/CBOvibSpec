@@ -1,4 +1,4 @@
-# src/cboptvibspec/__init__.py
+# src/CBOPTvibSpec/__init__.py
 
 from .cbopt_vib_spec import (
     CBOPTHessian,

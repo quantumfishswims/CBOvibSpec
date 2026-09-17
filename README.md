@@ -38,13 +38,13 @@ pip install -e ".[examples]"
 ## Package Layout
 
 ```
-src/cboptvibspec/
+src/CBOPTvibSpec/
 ├── cbopt_vib_spec.py     # CBOPTHessian0/1/2, IR/Raman response classes
 ├── calc_cbopt_spec.py    # CBOPTSpecIR()/CBOPTSpecRaman() one-shot convenience functions
 └── __init__.py           # public exports
 ```
 
-Public API (importable as `from cboptvibspec import ...` once installed, e.g. via `pip install -e .`):
+Public API (importable as `from CBOPTvibSpec import ...` once installed, e.g. via `pip install -e .`):
 
 - `CBOPTHessian0`, `CBOPTHessian1`, `CBOPTHessian2` — build the CBO-PT(n) vibro-polaritonic Hessian for n = 0, 1, 2.
 - `CBOPTHessian.create(cbopt_order=..., **kwargs)` — construct the Hessian subclass matching `cbopt_order` (`"cbopt_0"`/`"cbopt_1"`/`"cbopt_2"`) without importing the concrete class directly.
