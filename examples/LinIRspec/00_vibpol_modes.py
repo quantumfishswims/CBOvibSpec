@@ -10,9 +10,8 @@ Example contains CBO-PT(n) n=0,1,2 Hessians, eigensystems (eigenvalues/-vectors)
 
 Lit.: Frerick, Roemelt, Fischer. Phys. Chem. Chem. Phys. (2026) 28 (15): 9464-9473 (10.1039/d6cp00345a)
 """
-import bootstrap
 import numpy as np
-from src.CBOPTvibSpec import CBOPTHessian0, CBOPTHessian1, CBOPTHessian2, AU_TO_CM
+from cboptvibspec import CBOPTHessian0, CBOPTHessian1, CBOPTHessian2, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 

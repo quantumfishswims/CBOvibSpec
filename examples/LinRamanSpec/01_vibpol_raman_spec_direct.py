@@ -9,10 +9,9 @@ of formaldehyde around 3000 cm-1.
 Direct evaluation of linear Raman spectra and frequencies for CBO-PT(n), n=0,1,2.
 """
 
-import bootstrap
 import numpy as np
 import matplotlib.pyplot as plt
-from src.CBOPTvibSpec import CBOPTSpecRaman, AU_TO_CM
+from cboptvibspec import CBOPTSpecRaman, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 
