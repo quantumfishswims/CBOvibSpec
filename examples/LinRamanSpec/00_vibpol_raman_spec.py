@@ -12,10 +12,9 @@ corresponding frequencies (freqs), Raman activities and linear Raman spectra.
 Lit.:
 """
 
-import bootstrap
 import numpy as np
 import matplotlib.pyplot as plt
-from src.CBOPTvibSpec import CBOPTHessian0, CBOPTHessian1, CBOPTHessian2, AU_TO_CM
+from cboptvibspec import CBOPTHessian0, CBOPTHessian1, CBOPTHessian2, AU_TO_CM
 
 au_to_cm = AU_TO_CM
 
@@ -93,7 +92,6 @@ cbopt_2_full, cbopt_2_stick = cbopt_2_raman_spec
 plt.plot(spec_grid, cbopt_0_full["total"], color='blue', label='CBOPT(0)')
 plt.plot(spec_grid, cbopt_1_full["total"], color='red', label='CBOPT(1)')
 plt.plot(spec_grid, cbopt_2_full["total"], color='green', label='CBOPT(2)')
-#plt.stem(mol_freqs, cbopt_0_stick["total"], markerfmt='+', linefmt='blue', label='CBOPT(0) stick')
 plt.xlabel('Wavenumbers [cm$^{-1}$]')
 plt.ylabel('Raman Activity [a.u.]')
 plt.legend(loc='upper right')

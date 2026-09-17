@@ -21,7 +21,7 @@ cd CBOvibSpec
 pip install -e .
 ```
 
-Requires Python >= 3.9. Runtime dependencies are `numpy>=1.20.0` and `matplotlib` (see `pyproject.toml`).
+Requires Python >= 3.9. The only runtime dependency is `numpy>=1.20.0` (see `pyproject.toml`).
 
 To also install the test dependencies:
 
@@ -29,16 +29,22 @@ To also install the test dependencies:
 pip install -e ".[test]"
 ```
 
+The `examples/` scripts additionally need `matplotlib`, which is not required by the library itself:
+
+```bash
+pip install -e ".[examples]"
+```
+
 ## Package Layout
 
 ```
-src/CBOPTvibSpec/
+src/cboptvibspec/
 ├── cbopt_vib_spec.py     # CBOPTHessian0/1/2, IR/Raman response classes
 ├── calc_cbopt_spec.py    # CBOPTSpecIR()/CBOPTSpecRaman() one-shot convenience functions
 └── __init__.py           # public exports
 ```
 
-Public API (importable as `from CBOPTvibSpec import ...`, or `from src.CBOPTvibSpec import ...` when running from the repo root as in the examples):
+Public API (importable as `from cboptvibspec import ...` once installed, e.g. via `pip install -e .`):
 
 - `CBOPTHessian0`, `CBOPTHessian1`, `CBOPTHessian2` — build the CBO-PT(n) vibro-polaritonic Hessian for n = 0, 1, 2.
 - `CBOPTHessian.create(cbopt_order=..., **kwargs)` — construct the Hessian subclass matching `cbopt_order` (`"cbopt_0"`/`"cbopt_1"`/`"cbopt_2"`) without importing the concrete class directly.
@@ -96,6 +102,20 @@ Run a script from within its own example directory, e.g.:
 cd examples/LinIRspec
 python 01_vibpol_ir_spec.py
 ```
+
+## Tests
+
+Install the test dependencies (see Installation above) and run:
+
+```bash
+pytest
+```
+
+The suite (`tests/`) checks physical invariants of the CBO-PT(n) implementation:
+
+- `test_cbopt_hessian.py`: Core Hessian-building blocks — `build_sym_matrix`/`props2polaraxis`/`project_dipole`/`project_polarizability`, polarization validation, Hessian symmetry, exact reduction of CBO-PT(1) and CBO-PT(2) to CBO-PT(0) at zero coupling, eigenfrequency recovery, `CBOPTHessian.create()` registry dispatch, and abstract-base enforcement.
+- `test_cbopt_spectra.py`: IR/Raman response classes — the CBO-PT(0) IR/Raman round trip and closed forms, rotation invariance of Raman activities, Lorentzian peak-shape normalization, and internal consistency of `build_spec`.
+- `test_calc_cbopt_spec.py`: End-to-end checks that `CBOPTSpecIR`/`CBOPTSpecRaman` reproduce the equivalent `CBOPTHessian`-based pipeline for CBO-PT(0/1/2).
 
 ## Literature 
 
