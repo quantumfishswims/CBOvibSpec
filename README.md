@@ -57,7 +57,7 @@ Public API (importable as `from CBOPTvibSpec import ...` once installed, e.g. vi
 
 Hessian/IR/Raman:
 - Molecular normal-mode frequencies 
-- Dipole derivative vectors including vibrational overlap
+- Dipole derivative vectors
 - Static dipole polarizability tensor 
 
 Raman

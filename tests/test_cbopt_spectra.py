@@ -25,16 +25,17 @@ def single_mode_kwargs():
 
 # --- IR ---
 
-def test_ir0_intensity_matches_raw_dipole_derivative_norm(single_mode_kwargs):
-    """The sqrt(2*vib_modes) weighting in dip_deriv at construction is
-    divided back out for IR intensities, so CBO-PT(0) must recover exactly the
-    squared norm of the raw ab initio dipole derivatives.
+def test_ir0_intensity_matches_frequency_weighted_dipole_derivative_norm(single_mode_kwargs):
+    """dip_deriv is stored bare; CBO-PT(0) IR intensities divide it by
+    sqrt(2*vib_modes), so they equal the squared norm of the bare dipole
+    derivatives divided by 2*vib_modes (atomic units).
     """
     h0 = CBOPTHessian0(**single_mode_kwargs).eigensystem()
     ir0 = h0.cbopt_ir_response()
 
-    raw = single_mode_kwargs["dip_deriv"]
-    expected = np.einsum('ik,ik->i', raw, raw)
+    bare = single_mode_kwargs["dip_deriv"]
+    vib_modes = single_mode_kwargs["vib_modes"]/AU_TO_CM
+    expected = np.einsum('ik,ik->i', bare, bare)/(2*vib_modes)
     np.testing.assert_allclose(ir0.intensities["total"], expected, atol=1e-12)
 
 

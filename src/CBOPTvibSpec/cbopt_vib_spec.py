@@ -6,8 +6,8 @@ Definition of CBO-PT(n) Hessians and Intensities (IR, Raman) for perturbation or
 
 Code requires ab initio data:
 1) normal-mode frequencies
-2) frequency-weighted dipole derivatives (vibrational overlap, cf. ORCA)
-3) dipole polarizability tensor 
+2) dipole derivatives
+3) dipole polarizability tensor
 4) dipole polarizability derivatives (for Raman spectroscopy)
 5) dipole hyperpolarizability 
 
@@ -291,7 +291,7 @@ class CBOPTHessian(abc.ABC):
         self.vib_modes          = np.asarray(vib_modes, dtype=float)/AU_TO_CM
         self.cav_modes          = np.asarray(cav_modes, dtype=float)/AU_TO_CM
         self.coupling           = float(coupling)
-        self.dip_deriv          = np.einsum('i,ij->ij', np.sqrt(2*self.vib_modes), np.asarray(dip_deriv, dtype=float))    
+        self.dip_deriv          = np.asarray(dip_deriv, dtype=float)
         self.polarizability     = np.asarray(polarizability, dtype=float)
         self.polarization       = np.asarray(polarization, dtype=float)
         self.n_mol              = float(n_mol) 
@@ -691,7 +691,7 @@ class _CBOPTSpecIR2(_CBOPTSpec):
 
         weighted_evecs_vib = self.evecs[:n_vib, :] / np.sqrt(2*self.vib_modes)[:, None]  # (n_vib, n_states)
         term_mol           = np.einsum('ik,im->mk', self.dip_deriv, weighted_evecs_vib)  # (n_states, 3)
-        sqrt_cav            = np.sqrt(self.cav_modes/2)
+        sqrt_cav           = np.sqrt(self.cav_modes/2)
 
         if self.single_mode_approx == True:
             molfac = 0.5*self.coupling**2*n_cav*semiproj_stat_polarize  # (3,)
