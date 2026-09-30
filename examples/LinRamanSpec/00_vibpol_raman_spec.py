@@ -25,9 +25,9 @@ alpha_deriv    = np.loadtxt('model_data/stat_polar_deriv_formaldehyde_2mode.dat'
 hyperpolarize  = np.loadtxt('model_data/stat_hyperpolar_formaldehyde.dat', dtype=float)
 
 # --- System Parameters ---
-# 2922.91 2987.85
+# 2923.64 2988.26
 nmol         = 1
-cav_freqs    = np.array([2987.85])  # in cm-1
+cav_freqs    = np.array([2988.26])  # in cm-1
 coupling     = 0.03*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
 polarization = np.array([[0, 1, 0], [0, 1, 0]])
 single_mode_approximation = True # use single-mode approximation for hyperpolarizability
@@ -45,7 +45,7 @@ cbopt_params = dict(vib_modes          = mol_freqs,
 
 # --- Spectroscopy Parameters ---
 
-freq_min, freq_max  = 2800, 3200
+freq_min, freq_max  = 2800, 3100
 nfreq               = 5000
 spec_grid           = np.linspace(freq_min, freq_max, nfreq)
 broadening          = 10 # cm-1
@@ -97,7 +97,10 @@ plt.ylabel('Raman Activity [a.u.]')
 plt.legend(loc='upper right')
 plt.show()
 
-plt.plot(spec_grid, cbopt_2_full["cav"], color='orange', label='CBOPT(2) cav')
+plt.plot(spec_grid, cbopt_2_full["total"], color='blue', label='CBOPT(2) total')
+plt.plot(spec_grid, cbopt_2_full["mol"], color='red', label='CBOPT(2) mol')
+plt.plot(spec_grid, cbopt_2_full["mix"]*1e1, color='green', label='CBOPT(2) mix (x 10)')
+plt.plot(spec_grid, cbopt_2_full["cav"]*5e1, color='orange', label='CBOPT(2) cav (x 50)')
 plt.xlabel('Wavenumbers [cm$^{-1}$]')
 plt.ylabel('Raman Activity [a.u.]')
 plt.legend(loc='upper right')

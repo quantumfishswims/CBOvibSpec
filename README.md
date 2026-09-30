@@ -57,11 +57,11 @@ Public API (importable as `from CBOPTvibSpec import ...` once installed, e.g. vi
 
 Hessian/IR/Raman:
 - Molecular normal-mode frequencies 
-- Dipole derivative vectors
+- Dipole derivative vectors along normal modes
 - Static dipole polarizability tensor 
 
 Raman
-- Dipole polarizability derivatives 
+- Dipole polarizability derivatives along normal modes
 - Static dipole hyperpolarizability tensor 
 
 ## Building a CBO-PT(n) Hessian

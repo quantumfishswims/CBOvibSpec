@@ -22,9 +22,9 @@ alpha_deriv    = np.loadtxt('model_data/stat_polar_deriv_formaldehyde_2mode.dat'
 hyperpolarize  = np.loadtxt('model_data/stat_hyperpolar_formaldehyde.dat', dtype=float)
 
 # --- System Parameters ---
-# 2922.91 2987.85
+# 2923.64 2988.26
 nmol         = 1
-cav_freqs    = np.array([2987.85])  # in cm-1
+cav_freqs    = np.array([2988.26])  # in cm-1
 coupling     = 0.03*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
 polarization = np.array([[0, 1, 0], [0, 1, 0]])
 single_mode_approximation = True # use single-mode approximation for hyperpolarizability
@@ -32,7 +32,7 @@ polar_axis   = True # transform to polarizability-principal-axis frame to fix po
 
 # --- Spectroscopy Parameters ---
 
-freq_min, freq_max  = 2800, 3200
+freq_min, freq_max  = 2800, 3100
 nfreq               = 5000
 spec_grid           = np.linspace(freq_min, freq_max, nfreq)
 broadening          = 10 # cm-1
@@ -62,21 +62,22 @@ cbopt2_raman_spec, cbopt2_freqs = CBOPTSpecRaman(**cbopt_params, hyperpolarize=h
 #   CBO-PT(0)/(1): {"total"}
 #   CBO-PT(2):     {"total", "mol", "cav", "mix"}
 
-cbopt0_full, cbopt0_stick = cbopt0_raman_spec
-cbopt1_full, cbopt1_stick = cbopt1_raman_spec
-cbopt2_full, cbopt2_stick = cbopt2_raman_spec
+cbopt_0_full, cbopt_0_stick = cbopt0_raman_spec
+cbopt_1_full, cbopt_1_stick = cbopt1_raman_spec
+cbopt_2_full, cbopt_2_stick = cbopt2_raman_spec
 
-plt.plot(spec_grid, cbopt0_full["total"], color='blue', label='CBOPT(0)')
-plt.plot(spec_grid, cbopt1_full["total"], color='red', label='CBOPT(1)')
-plt.plot(spec_grid, cbopt2_full["total"], color='green', label='CBOPT(2)')
+plt.plot(spec_grid, cbopt_0_full["total"], color='blue', label='CBOPT(0)')
+plt.plot(spec_grid, cbopt_1_full["total"], color='red', label='CBOPT(1)')
+plt.plot(spec_grid, cbopt_2_full["total"], color='green', label='CBOPT(2)')
 plt.xlabel('Wavenumbers [cm$^{-1}$]')
 plt.ylabel('Raman Activity [a.u.]')
 plt.legend(loc='upper right')
 plt.show()
 
-for component, spec in cbopt2_full.items():
-    label = 'CBOPT(2)' if component == 'total' else f'CBOPT(2) {component}'
-    plt.plot(spec_grid, spec, label=label)
+plt.plot(spec_grid, cbopt_2_full["total"], color='blue', label='CBOPT(2) total')
+plt.plot(spec_grid, cbopt_2_full["mol"], color='red', label='CBOPT(2) mol')
+plt.plot(spec_grid, cbopt_2_full["mix"]*1e1, color='green', label='CBOPT(2) mix (x 10)')
+plt.plot(spec_grid, cbopt_2_full["cav"]*5e1, color='orange', label='CBOPT(2) cav (x 50)')
 plt.xlabel('Wavenumbers [cm$^{-1}$]')
 plt.ylabel('Raman Activity [a.u.]')
 plt.legend(loc='upper right')
