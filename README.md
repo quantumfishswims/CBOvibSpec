@@ -21,7 +21,7 @@ cd CBOvibSpec
 pip install -e .
 ```
 
-Requires Python >= 3.9. The only runtime dependency is `numpy>=1.20.0` (see `pyproject.toml`).
+Requires Python >= 3.10. The only runtime dependency is `numpy>=1.20.0` (see `pyproject.toml`).
 
 To also install the test dependencies:
 

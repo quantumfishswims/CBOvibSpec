@@ -6,6 +6,8 @@ import pytest
 from CBOPTvibSpec import CBOPTHessian0, CBOPTHessian1
 from CBOPTvibSpec.cbopt_vib_spec import AU_TO_CM, alphaderiv2polaraxis, lorentzian
 
+trapezoid = getattr(np, "trapezoid", None) or np.trapz
+
 
 @pytest.fixture
 def single_mode_kwargs():
@@ -107,7 +109,7 @@ def test_raman_alpha_deriv_shape_mismatch_raises(single_mode_kwargs):
 def test_lorentzian_is_normalized(delta):
     omega0 = 100.0
     grid = np.linspace(omega0 - 500 * delta, omega0 + 500 * delta, 200_001)
-    integral = np.trapz(lorentzian(delta, grid, omega0), grid)
+    integral = trapezoid(lorentzian(delta, grid, omega0), grid)
     assert integral == pytest.approx(1.0, abs=1e-3)
 
 
@@ -132,6 +134,6 @@ def test_build_spec_full_spectrum_integrates_to_sum_of_intensities(single_mode_k
 
     spec_full, _ = ir0.build_spec(spec_grid, broadening=broadening)
 
-    integral = np.trapz(spec_full["total"], spec_grid)
+    integral = trapezoid(spec_full["total"], spec_grid)
     expected = ir0.intensities["total"].sum()
     assert integral == pytest.approx(expected, rel=1e-2)
