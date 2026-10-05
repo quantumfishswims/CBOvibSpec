@@ -9,9 +9,15 @@ build/
 
 .DS_Store
 Thumbs.db
+*:Zone.Identifier
 
 .vscode/
 .idea/
 
 .coverage
 htmlcov/
+
+.env
+
+# output of examples/LinRamanSpec/02_vibpol_raman_spec_rot.py
+examples/LinRamanSpec/formaldehyde_polaraxis.xyz
