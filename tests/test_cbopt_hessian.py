@@ -71,6 +71,7 @@ def test_props2polaraxis_diagonalizes_with_orthogonal_rotation():
     dip_t, polar_t, rotation = props2polaraxis(dip_deriv, polarizability)
 
     np.testing.assert_allclose(rotation.T @ rotation, np.eye(3), atol=1e-10)
+    assert np.linalg.det(rotation) == pytest.approx(1.0)
 
     full = build_sym_matrix(polarizability, 3)
     expected_evals = np.linalg.eigvalsh(full)
