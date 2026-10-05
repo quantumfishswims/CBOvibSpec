@@ -41,6 +41,9 @@ pip install -e ".[examples]"
 src/CBOPTvibSpec/
 ├── cbopt_vib_spec.py     # CBOPTHessian0/1/2, IR/Raman response classes
 ├── calc_cbopt_spec.py    # CBOPTSpecIR()/CBOPTSpecRaman() one-shot convenience functions
+├── utils/
+│   ├── hess2cbovibspec.py  # ORCA .hess -> normal-mode frequencies, dipole/polarizability derivatives
+│   └── xyz2polaraxis.py    # .xyz structure + dipole derivatives -> polarizability principal-axis frame
 └── __init__.py           # public exports
 ```
 
@@ -64,6 +67,15 @@ Raman
 - Dipole polarizability derivatives along normal modes
 - Static dipole hyperpolarizability tensor 
 
+## Utilities
+
+Command-line scripts in `src/CBOPTvibSpec/utils/` for preparing input data:
+
+- `hess2cbovibspec.py file.hess [label] [out_dir]`: Normal-mode frequencies, dipole derivatives and (if available) polarizability derivatives from an ORCA `.hess` file.
+- `xyz2polaraxis.py file.xyz dip_deriv.dat stat_polar.dat [label] [out_dir]`: Rotates molecular structure, dipole derivatives and static polarizability into the polarizability principal-axis frame (same rotation as `polar_axis=True`). Writes the rotated `.xyz` structure, dipole derivatives, the three polarizability eigenvalues and the rotation matrix.
+
+Run them by file path, e.g. `python3 src/CBOPTvibSpec/utils/xyz2polaraxis.py ...` (via `python3 -m CBOPTvibSpec.utils.<script>`, Python emits a harmless `RuntimeWarning`, since `CBOPTvibSpec.utils` imports the script module before execution). Both are also importable as functions from `CBOPTvibSpec.utils`.
+
 ## Building a CBO-PT(n) Hessian
 
 Build a Hessian ordered as `[vibrational modes | cavity mode(s)]`´with `CBOPTHessian0`, `CBOPTHessian1`, or `CBOPTHessian2`. Call `.eigensystem()` to obtain eigenvalues/eigenvectors/frequencies.
@@ -78,7 +90,7 @@ See `examples/LinIRspec/01_vibpol_ir_spec.py` & `02_vibpol_ir_spec_direct.py` (I
 
 ## Key Options
 
-- `single_mode_approx` (`bool`): `True` considers single cavity mode with `polarization` vector (shape `(3,)`, normalized). `False` considers doubly degenerate cavity-mode with two orthogonal polarizations (shape `(2, 3)`, CBO-PT(n)).
+- `single_mode_approx` (`bool`): `polarization` is always passed as a 2D array of normalized row vectors. `True` considers single cavity mode with the first row `polarization[0]` as polarization vector (shape `(1, 3)` or `(2, 3)`; further rows are ignored). `False` considers doubly degenerate cavity-mode with two orthogonal polarizations (shape `(2, 3)`, CBO-PT(n)).
 - `polar_axis` (`bool`): Rotates `dip_deriv`/`polarizability` and `alpha_deriv`/`hyperpolarize` for Raman into principal-axis frame of static polarizability tensor before building the Hessian. Renders choice of cavity polarization vectors independent of the input molecular axis system. See `examples/LinIRspec/03_vibpol_ir_spec_polar_axis.py`.
 - `n_mol`: Number of molecules contributing to the collective light-matter coupling. 
 
@@ -95,6 +107,7 @@ Raman
 
 - `LinRamanSpec/00_vibpol_raman_spec.py`: Vibro-polaritonic Raman spectra for CBO-PT(0/1/2) with plots.
 - `LinRamanSpec/01_vibpol_raman_spec_direct.py`: Vibro-polaritonic Raman spectra from one-shot `CBOPTSpecRaman` function.
+- `LinRamanSpec/02_vibpol_raman_spec_rot.py`: Vibro-polaritonic Raman spectra together with structure, dipole derivatives and polarizability derivatives (upper-triangular xx, xy, xz, yy, yz, zz) in the polarizability principal-axis frame (`xyz2polaraxis`, `alphaderiv2polaraxis`). Only the static polarizability is diagonal in this frame; derivatives along normal modes are not, e.g. for the asymmetric (B₂) C-H stretch of formaldehyde the off-diagonal yz component dominates.
 
 Run a script from within its own example directory, e.g.:
 

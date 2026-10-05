@@ -112,6 +112,10 @@ def props2polaraxis(dip_deriv, polarizability):
     stat_polarize       = build_sym_matrix(polarizability, 3)
     evals_polarize, evecs_polarize   = np.linalg.eigh(stat_polarize)
 
+    # eigenvector signs are arbitrary: enforce a proper rotation (det = +1), no reflection
+    if np.linalg.det(evecs_polarize) < 0:
+        evecs_polarize[:, 2] *= -1
+
     dip_derive_transfrom       = np.einsum('ij,jk->ik', dip_deriv, evecs_polarize)
     stat_polarize_transform    = np.einsum('i ,ij->ij', evals_polarize, np.eye(3))
 
