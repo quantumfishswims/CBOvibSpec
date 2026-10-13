@@ -25,9 +25,9 @@ hyperpolarize  = np.loadtxt('model_data/stat_hyperpolar_formaldehyde.dat', dtype
 # 2923.64 2988.26
 nmol         = 1
 cav_freqs    = np.array([2988.26])  # in cm-1
-coupling     = 0.03*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
-polarization = np.array([[0, 1, 0], [0, 1, 0]])
-single_mode_approximation = True # use single-mode approximation for hyperpolarizability
+coupling     = 0.01*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
+polarization = np.array([[0, 1, 0], [0, 1, 0]]) # cavity-mode polarization vectors
+single_mode_approximation = True # use single-mode approximation for cavity
 polar_axis   = True # transform to polarizability-principal-axis frame to fix polarization
 
 # --- Spectroscopy Parameters ---
@@ -52,9 +52,9 @@ cbopt_params = dict(vib_modes          = mol_freqs,
 
 # --- CBO-PT Raman Spectrum ---
 
-cbopt0_raman_spec, cbopt0_freqs = CBOPTSpecRaman(**cbopt_params, cbopt_order="cbopt_0")
-cbopt1_raman_spec, cbopt1_freqs = CBOPTSpecRaman(**cbopt_params, cbopt_order="cbopt_1")
-cbopt2_raman_spec, cbopt2_freqs = CBOPTSpecRaman(**cbopt_params, hyperpolarize=hyperpolarize, cbopt_order="cbopt_2")
+cbopt_0_raman_spec, cbopt_0_freqs = CBOPTSpecRaman(**cbopt_params, cbopt_order="cbopt_0")
+cbopt_1_raman_spec, cbopt_1_freqs = CBOPTSpecRaman(**cbopt_params, cbopt_order="cbopt_1")
+cbopt_2_raman_spec, cbopt_2_freqs = CBOPTSpecRaman(**cbopt_params, hyperpolarize=hyperpolarize, cbopt_order="cbopt_2")
 
 # --- CBO-PT Raman Spectra Plots ---
 #
@@ -62,13 +62,16 @@ cbopt2_raman_spec, cbopt2_freqs = CBOPTSpecRaman(**cbopt_params, hyperpolarize=h
 #   CBO-PT(0)/(1): {"total"}
 #   CBO-PT(2):     {"total", "mol", "cav", "mix"}
 
-cbopt_0_full, cbopt_0_stick = cbopt0_raman_spec
-cbopt_1_full, cbopt_1_stick = cbopt1_raman_spec
-cbopt_2_full, cbopt_2_stick = cbopt2_raman_spec
+cbopt_0_full, cbopt_0_stick = cbopt_0_raman_spec
+cbopt_1_full, cbopt_1_stick = cbopt_1_raman_spec
+cbopt_2_full, cbopt_2_stick = cbopt_2_raman_spec
 
 plt.plot(spec_grid, cbopt_0_full["total"], color='blue', label='CBOPT(0)')
 plt.plot(spec_grid, cbopt_1_full["total"], color='red', label='CBOPT(1)')
 plt.plot(spec_grid, cbopt_2_full["total"], color='green', label='CBOPT(2)')
+plt.stem(mol_freqs, cbopt_0_stick["total"], linefmt='b-', markerfmt='', basefmt=' ')
+plt.stem(cbopt_1_freqs*au_to_cm, cbopt_1_stick["total"], linefmt='r-', markerfmt='', basefmt=' ')
+plt.stem(cbopt_2_freqs*au_to_cm, cbopt_2_stick["total"], linefmt='g-', markerfmt='', basefmt=' ')
 plt.xlabel('Wavenumbers [cm$^{-1}$]')
 plt.ylabel('Raman Activity [a.u.]')
 plt.legend(loc='upper right')
@@ -78,6 +81,10 @@ plt.plot(spec_grid, cbopt_2_full["total"], color='blue', label='CBOPT(2) total')
 plt.plot(spec_grid, cbopt_2_full["mol"], color='red', label='CBOPT(2) mol')
 plt.plot(spec_grid, cbopt_2_full["mix"]*1e1, color='green', label='CBOPT(2) mix (x 10)')
 plt.plot(spec_grid, cbopt_2_full["cav"]*5e1, color='orange', label='CBOPT(2) cav (x 50)')
+plt.stem(cbopt_2_freqs*au_to_cm, cbopt_2_stick["total"], linefmt='b-', markerfmt='', basefmt=' ')
+plt.stem(cbopt_2_freqs*au_to_cm, cbopt_2_stick["mol"], linefmt='r-', markerfmt='', basefmt=' ')
+plt.stem(cbopt_2_freqs*au_to_cm, cbopt_2_stick["mix"]*1e1, linefmt='g-', markerfmt='', basefmt=' ')
+plt.stem(cbopt_2_freqs*au_to_cm, cbopt_2_stick["cav"]*5e1, linefmt='orange', markerfmt='', basefmt=' ')
 plt.xlabel('Wavenumbers [cm$^{-1}$]')
 plt.ylabel('Raman Activity [a.u.]')
 plt.legend(loc='upper right')

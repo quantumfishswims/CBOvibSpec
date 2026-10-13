@@ -24,9 +24,9 @@ stat_polar      = np.loadtxt('model_data/stat_polar_pta.dat', dtype=float)
 nmol         = 1
 cav_freqs    = np.array([861.6])  # in cm-1
 coupling     = 0.02*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
-polarization = np.array([[0, 0, 1], [0, 1, 0]])
-single_mode_approximation = True
-polar_axis = True
+polarization = np.array([[0, 0, 1], [0, 1, 0]]) # cavity-mode polarization vectors
+single_mode_approximation = True # use single-mode approximation for cavity
+polar_axis   = True # transform to polarizability-principal-axis frame to fix polarization
 
 cbopt_params = dict(vib_modes          = mol_freqs,
                     cav_modes          = cav_freqs,

@@ -100,7 +100,7 @@ IR
 
 - `LinIRspec/00_vibpol_modes.py`: Vibro-polaritonic Hessians and eigesystem for CBO-PT(0/1/2).
 - `LinIRspec/01_vibpol_ir_spec.py`: Vibro-polaritonic IR spectra for CBO-PT(0/1/2) with plots.
-- `LinIRspec/02_vibpol_ir_spec_direct.py`: Vvibro-polaritonic IR spectra from one-shot `CBOPTSpecIR` function.
+- `LinIRspec/02_vibpol_ir_spec_direct.py`: Vibro-polaritonic IR spectra from one-shot `CBOPTSpecIR` function.
 - `LinIRspec/03_vibpol_ir_spec_polar_axis.py`: Effect of the `polar_axis` option on vibro-polaritonic IR spectra.
 
 Raman 
