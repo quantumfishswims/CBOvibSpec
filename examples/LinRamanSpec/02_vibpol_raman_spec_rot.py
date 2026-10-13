@@ -6,11 +6,8 @@ Linear vibropolaritonic Raman spectra from CBO-PT(n) linear response with n=0,1,
 2+1 mode example for experimentally relevant symmetric/asymmetric C-H-stretch band
 of formaldehyde around 3000 cm-1.
 
-Example contains eigensystems (eigenvalues/-vectors) for CBO-PT(n) n=0,1,2 Hessians,
-corresponding frequencies (freqs), Raman activities and linear Raman spectra, and the
-structure/dipole derivatives in the polarizability principal-axis frame, in which the
-cavity polarization vectors are defined for polar_axis=True.
-
+Example equivalent to 00_vibpol_raman_spec.py with additional output of molecular structure 
+besides dipole and polarizability derivatives in the polarizability principal-axis frame (polar_axis=True).
 Lit.:
 """
 
@@ -31,10 +28,10 @@ hyperpolarize  = np.loadtxt('model_data/stat_hyperpolar_formaldehyde.dat', dtype
 # --- System Parameters ---
 # 2923.64 2988.26
 nmol         = 1
-cav_freqs    = np.array([2923.64])  # in cm-1
+cav_freqs    = np.array([2988.26])  # in cm-1
 coupling     = 0.01*np.sqrt(nmol) # in au, scaled by sqrt(nmol) for collective coupling
-polarization = np.array([[0, 0, 1], [0, 1, 0]])
-single_mode_approximation = True # use single-mode approximation for hyperpolarizability
+polarization = np.array([[0, 1, 0], [0, 1, 0]]) # cavity-mode polarization vectors
+single_mode_approximation = True # use single-mode approximation for cavity
 polar_axis   = True # transform to polarizability-principal-axis frame to fix polarization
 
 cbopt_params = dict(vib_modes          = mol_freqs,
@@ -56,7 +53,7 @@ if polar_axis == True:
 
 # --- Spectroscopy Parameters ---
 
-freq_min, freq_max  = 2850, 3050
+freq_min, freq_max  = 2800, 3100
 nfreq               = 5000
 spec_grid           = np.linspace(freq_min, freq_max, nfreq)
 broadening          = 10 # cm-1
