@@ -1,17 +1,16 @@
 # CBOvibSpec
 
-**CBOvibSpec** is a Python package providing a linear response implementation for **vibrational polariton spectroscopy** via **Cavity Born-Oppenheimer Perturbation Theory (CBO-PT)**. 
+**CBOvibSpec** is a Python package providing a linear response implementation for **vibrational polariton spectroscopy** in the **cavity Born-Oppenheimer (CBO)** framework.
 
-## Overview 
+## Overview
 
-The **CBOvibSpec** package enables the computational study of vibrational polaritons and their linear **infrared (IR)** and **Raman** spectra in the cavity Born-Oppenheimer framework. CBO-PT approximately accounts for electron-cavity feedback leading for example to matter-induced cavity frequency screening and IR/Raman intensities with
-light-matter hybrid components. The package is based on *ab initio* input data obtaineable from state-of-the-art quantum chemistry software packages. 
+The **CBOvibSpec** package enables the computational study of vibrational polaritons and their linear **infrared (IR)** and **Raman** spectra in the **CBO** framework. **CBO perturbation theory (CBO-PT)** approximately accounts for weak interactions between electrons and low-frequency cavity modes in the vibrational strong coupling (VSC) regime. These effects lead for example to matter-induced cavity frequency screening or IR intensities/Raman activities with light-matter hybrid components. The package is based on *ab initio* input data obtainable from state-of-the-art quantum chemistry software packages.
 
 ### Key Features
 
-- **CBOPTHessian**: Vibro-polaritonic Hessian accounting for cavity-electron feedback up to second-order CBO-PT. Provides access to vibrational polariton modes and frequencies in double harmonic approximation.
-- **CBOPTSpec (IR)**: Linear vibro-polaritonic infrared spectra accounting for cavity-electron feedback up to second-order CBO-PT. Provides access to vibro-polaritonic IR intensities.
-- **CBOPTSpec (Raman)**: Linear vibro-polaritonic Raman spectra accounting for cavity-electron feedback up to second-order CBO-PT. Provides access to vibro-polaritonic Raman activities.
+- **CBOPTHessian**: Vibro-polaritonic Hessian accounting for electron-cavity interactions up to second-order CBO-PT. Provides access to vibrational polariton modes and frequencies in double harmonic approximation.
+- **CBOPTSpec (IR)**: Linear vibro-polaritonic infrared spectra accounting for electron-cavity interactions up to second-order CBO-PT. Provides access to vibro-polaritonic IR intensities.
+- **CBOPTSpec (Raman)**: Linear vibro-polaritonic Raman spectra accounting for electron-cavity interactions up to third-order CBO-PT for Raman. Provides access to vibro-polaritonic Raman activities.
 
 ## Installation
 
@@ -35,6 +34,11 @@ The `examples/` scripts additionally need `matplotlib`, which is not required by
 pip install -e ".[examples]"
 ```
 
+**Note:** The repository is named `CBOvibSpec`, while the installed package (pip distribution and import name) is `CBOPTvibSpec` due to its current restriction to CBO-PT :
+```python
+from CBOPTvibSpec import ...
+```
+
 ## Package Layout
 
 ```
@@ -51,63 +55,63 @@ Public API (importable as `from CBOPTvibSpec import ...` once installed, e.g. vi
 
 - `CBOPTHessian0`, `CBOPTHessian1`, `CBOPTHessian2` — build the CBO-PT(n) vibro-polaritonic Hessian for n = 0, 1, 2.
 - `CBOPTHessian.create(cbopt_order=..., **kwargs)` — construct the Hessian subclass matching `cbopt_order` (`"cbopt_0"`/`"cbopt_1"`/`"cbopt_2"`) without importing the concrete class directly.
-- `CBOPTSpecIR(...)` — module-level convenience function (from `calc_cbopt_spec.py`) that builds the Hessian, diagonalizes it, and returns the IR spectrum and frequencies in a single call.
-- `CBOPTSpecRaman(...)` — module-level convenience function (from `calc_cbopt_spec.py`) that builds the Hessian, diagonalizes it, and returns the Raman spectrum and frequencies in a single call.
+- `CBOPTSpecIR(...)` — module-level convenience function (from `calc_cbopt_spec.py`) that builds the Hessian, diagonalizes it and returns the IR spectrum/frequencies in a single call.
+- `CBOPTSpecRaman(...)` — module-level convenience function (from `calc_cbopt_spec.py`) that builds the Hessian, diagonalizes it and returns the Raman spectrum/frequencies in a single call.
 
-## Data Requirements 
+## Data Requirements
 
-*Ab initio* quantum chemistry data required: 
+*Ab initio* quantum chemistry data required:
 
 Hessian/IR/Raman:
-- Molecular normal-mode frequencies 
-- Dipole derivative vectors along normal modes
-- Static dipole polarizability tensor 
+- Molecular normal-mode frequencies
+- Dipole derivative vectors along mass-weighted normal modes
+- Static dipole polarizability tensor
 
-Raman
-- Dipole polarizability derivatives along normal modes
-- Static dipole hyperpolarizability tensor 
+Raman:
+- Dipole polarizability derivatives along mass-weighted normal modes
+- Static dipole hyperpolarizability tensor
 
 ## Utilities
 
 Command-line scripts in `src/CBOPTvibSpec/utils/` for preparing input data:
 
 - `hess2cbovibspec.py file.hess [label] [out_dir]`: Normal-mode frequencies, dipole derivatives and (if available) polarizability derivatives from an ORCA `.hess` file.
-- `xyz2polaraxis.py file.xyz dip_deriv.dat stat_polar.dat [label] [out_dir]`: Rotates molecular structure, dipole derivatives and static polarizability into the polarizability principal-axis frame (same rotation as `polar_axis=True`). Writes the rotated `.xyz` structure, dipole derivatives, the three polarizability eigenvalues and the rotation matrix.
+- `xyz2polaraxis.py file.xyz dip_deriv.dat stat_polar.dat [label] [out_dir]`: Rotates molecular structure, dipole derivatives and static polarizability into the polarizability principal-axis frame (same rotation as `polar_axis=True`). Writes the rotated `.xyz` structure, dipole derivatives, polarizability eigenvalues and the rotation matrix.
 
-Run them by file path, e.g. `python3 src/CBOPTvibSpec/utils/xyz2polaraxis.py ...` (via `python3 -m CBOPTvibSpec.utils.<script>`, Python emits a harmless `RuntimeWarning`, since `CBOPTvibSpec.utils` imports the script module before execution). Both are also importable as functions from `CBOPTvibSpec.utils`.
+Run scripts by file path, e.g. `python3 src/CBOPTvibSpec/utils/xyz2polaraxis.py ...` or import as functions from `CBOPTvibSpec.utils`.
 
 ## Building a CBO-PT(n) Hessian
 
-Build a Hessian ordered as `[vibrational modes | cavity mode(s)]`´with `CBOPTHessian0`, `CBOPTHessian1`, or `CBOPTHessian2`. Call `.eigensystem()` to obtain eigenvalues/eigenvectors/frequencies.
- 
+Build a Hessian ordered as `[vibrational modes | cavity mode(s)]` using `CBOPTHessian0`, `CBOPTHessian1` or `CBOPTHessian2`. Call `.eigensystem()` to obtain eigenvalues/eigenvectors/frequencies.
+
 See `examples/LinIRspec/00_vibpol_modes.py`.
 
 ## Calculating CBO-PT(n) IR and Raman Spectra
 
-From a Hessian eigensystem obtain an IR spectrum via `.cbopt_ir_response().build_spec(spec_grid, broadening=...)` or a Raman spectrum via `.cbopt_raman_response(...)` additionally requiring `alpha_deriv` and `hyperpolarize` for CBO-PT(2). One-shot application via `CBOPTSpecIR(...)` / `CBOPTSpecRaman(...)`. 
+From a Hessian eigensystem obtain an IR spectrum via `.cbopt_ir_response().build_spec(spec_grid, broadening=...)` or a Raman spectrum via `.cbopt_raman_response(...)`, additionally requiring `alpha_deriv` and `hyperpolarize`. Both are also available as one-shot functions `CBOPTSpecIR(...)` / `CBOPTSpecRaman(...)`.
 
 See `examples/LinIRspec/01_vibpol_ir_spec.py` & `02_vibpol_ir_spec_direct.py` (IR) and `examples/LinRamanSpec/00_vibpol_raman_spec.py` & `01_vibpol_raman_spec_direct.py` (Raman) for full parameter lists and output formats.
 
 ## Key Options
 
-- `single_mode_approx` (`bool`): `polarization` is always passed as a 2D array of normalized row vectors. `True` considers single cavity mode with the first row `polarization[0]` as polarization vector (shape `(1, 3)` or `(2, 3)`; further rows are ignored). `False` considers doubly degenerate cavity-mode with two orthogonal polarizations (shape `(2, 3)`, CBO-PT(n)).
-- `polar_axis` (`bool`): Rotates `dip_deriv`/`polarizability` and `alpha_deriv`/`hyperpolarize` for Raman into principal-axis frame of static polarizability tensor before building the Hessian. Renders choice of cavity polarization vectors independent of the input molecular axis system. See `examples/LinIRspec/03_vibpol_ir_spec_polar_axis.py`.
-- `n_mol`: Number of molecules contributing to the collective light-matter coupling. 
+- `single_mode_approx` (`bool`): `polarization` is always passed as a 2D array of normalized row vectors. `True` considers a single cavity mode with the first row `polarization[0]` as polarization vector (shape `(1, 3)`). `False` considers a doubly degenerate cavity mode with two orthogonal polarizations (shape `(2, 3)`, CBO-PT(n)).
+- `polar_axis` (`bool`): Rotates `dip_deriv`/`polarizability` and `alpha_deriv`/`hyperpolarize` into the principal-axis frame of the static polarizability tensor before building the Hessian. This makes the choice of cavity polarization vectors independent of the input molecular coordinate system. See `examples/LinIRspec/03_vibpol_ir_spec_polar_axis.py`.
+- `n_mol`: Number of molecules contributing to the collective light-matter coupling.
 
 ## Examples
 
-IR 
+IR
 
-- `LinIRspec/00_vibpol_modes.py`: Vibro-polaritonic Hessians and eigesystem for CBO-PT(0/1/2).
+- `LinIRspec/00_vibpol_modes.py`: Vibro-polaritonic Hessians and eigensystem for CBO-PT(0/1/2).
 - `LinIRspec/01_vibpol_ir_spec.py`: Vibro-polaritonic IR spectra for CBO-PT(0/1/2) with plots.
 - `LinIRspec/02_vibpol_ir_spec_direct.py`: Vibro-polaritonic IR spectra from one-shot `CBOPTSpecIR` function.
 - `LinIRspec/03_vibpol_ir_spec_polar_axis.py`: Effect of the `polar_axis` option on vibro-polaritonic IR spectra.
 
-Raman 
+Raman
 
 - `LinRamanSpec/00_vibpol_raman_spec.py`: Vibro-polaritonic Raman spectra for CBO-PT(0/1/2) with plots.
 - `LinRamanSpec/01_vibpol_raman_spec_direct.py`: Vibro-polaritonic Raman spectra from one-shot `CBOPTSpecRaman` function.
-- `LinRamanSpec/02_vibpol_raman_spec_rot.py`: Vibro-polaritonic Raman spectra together with structure, dipole derivatives and polarizability derivatives (upper-triangular xx, xy, xz, yy, yz, zz) in the polarizability principal-axis frame (`xyz2polaraxis`, `alphaderiv2polaraxis`). Only the static polarizability is diagonal in this frame; derivatives along normal modes are not, e.g. for the asymmetric (B₂) C-H stretch of formaldehyde the off-diagonal yz component dominates.
+- `LinRamanSpec/02_vibpol_raman_spec_rot.py`: Vibro-polaritonic Raman spectra together with structure, dipole derivatives and polarizability derivatives (upper-triangular xx, xy, xz, yy, yz, zz) in the polarizability principal-axis frame.
 
 Run a script from within its own example directory, e.g.:
 
@@ -129,23 +133,29 @@ The suite (`tests/`) checks physical invariants of the CBO-PT(n) implementation:
 - `test_cbopt_hessian.py`: Core Hessian-building blocks — `build_sym_matrix`/`props2polaraxis`/`project_dipole`/`project_polarizability`, polarization validation, Hessian symmetry, exact reduction of CBO-PT(1) and CBO-PT(2) to CBO-PT(0) at zero coupling, eigenfrequency recovery, `CBOPTHessian.create()` registry dispatch, and abstract-base enforcement.
 - `test_cbopt_spectra.py`: IR/Raman response classes — the CBO-PT(0) IR/Raman round trip and closed forms, rotation invariance of Raman activities, Lorentzian peak-shape normalization, and internal consistency of `build_spec`.
 - `test_calc_cbopt_spec.py`: End-to-end checks that `CBOPTSpecIR`/`CBOPTSpecRaman` reproduce the equivalent `CBOPTHessian`-based pipeline for CBO-PT(0/1/2).
+- `test_hess2cbovibspec.py`: ORCA `.hess` parsing (`read_hess` shapes/values, missing-block errors, missing polarizability derivatives), Hessian mass weighting, translation/rotation projection for linear and nonlinear molecules, and agreement of frequencies, dipole derivatives and polarizability derivatives with ORCA's frequencies, transition dipoles and Raman activities.
+- `test_xyz2polaraxis.py`: `.xyz` reading/writing round trip, diagonal polarizability in the principal-axis frame, proper rotation preserving molecular structure, rotation invariance of dipole/polarizability data, and consistency with `CBOPTHessian(polar_axis=True)`.
 
-## Literature 
+## Literature
 
 The theoretical background is described in:
 
-1. **E.W. Fischer**, J.A. Syska, P. Saalfrank. "A quantum chemistry approach to linear vibro-polaritonic infrared spectra with perturbative electron–photon correlation." 
+1. **E.W. Fischer**. "Vibro-polaritonic Raman spectroscopy via cavity Born-Oppenheimer perturbation theory." arXiv preprint arXiv:2610.23483 (2026).
+2. **E.W. Fischer**, J.A. Syska, P. Saalfrank. "A quantum chemistry approach to linear vibro-polaritonic infrared spectra with perturbative electron–photon correlation."
 	*J. Phys. Chem. Lett.* (2024) 15, 8, 2262–2269.
-	DOI: doi:10.1021/acs.jpclett.4c00105
-2. **E.W. Fischer**, P. Saalfrank. "Beyond Cavity Born–Oppenheimer: On Nonadiabatic Coupling and Effective Ground State Hamiltonians in Vibro-Polaritonic Chemistry."
+	DOI: 10.1021/acs.jpclett.4c00105
+3. **E.W. Fischer**, P. Saalfrank. "Beyond Cavity Born–Oppenheimer: On Nonadiabatic Coupling and Effective Ground State Hamiltonians in Vibro-Polaritonic Chemistry."
 	*J. Chem. Theory Comput.* (2023) 19, 20, 7215–7229.
 	DOI: 10.1021/acs.jctc.3c00708
-	
-Please cite these references when using CBOvibSpec in your research.
+
+Please cite the following when using CBOvibSpec in your research:
+
+- **Raman spectra:** references 1 and 3
+- **IR spectra:** references 2 and 3
 
 ### Referenced in IR Examples
 
-3. N.-O. Frerick, M. Roemelt, **E.W. Fischer**. "Nucleophilic substitution at silicon under vibrational strong coupling: Refined insights from a high-level ab initio perspective." *Phys. Chem. Chem. Phys.* (2026) 28 (15), 9464–9473. DOI: 10.1039/d6cp00345a
+N.-O. Frerick, M. Roemelt, **E.W. Fischer**. "Nucleophilic substitution at silicon under vibrational strong coupling: Refined insights from a high-level ab initio perspective." *Phys. Chem. Chem. Phys.* (2026) 28 (15), 9464–9473. DOI: 10.1039/d6cp00345a
 
 ## License
 
